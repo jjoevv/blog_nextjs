@@ -1,25 +1,45 @@
 pipeline {
     agent any
+
     stages {
         stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/jjoevv/blog_nextjs.git'
             }
         }
+
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'
             }
         }
+
         stage('Build') {
             steps {
                 sh 'npm run build'
             }
         }
+
         stage('Test') {
             steps {
-                sh 'npm test || true' // Bỏ qua lỗi nếu chưa có test
+                // Nếu chưa có test, lệnh này sẽ không fail pipeline
+                sh 'npm test || true'
             }
         }
     }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'out/**', allowEmptyArchive: true
+            junit '**/test-results.xml'
+        }
+        success {
+            echo '✅ Build completed successfully!'
+        }
+        failure {
+            echo '❌ Build failed!'
+        }
+    }
 }
+// This Jenkinsfile is for a Next.js application
+// It defines a pipeline with stages for checkout, installing dependencies, building the app, and running tests.
