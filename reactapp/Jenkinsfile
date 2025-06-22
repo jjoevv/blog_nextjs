@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = 'blog_nextjs_app'
+        CONTAINER_NAME = 'blog_nextjs_container'
+        PORT = '3000'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -14,7 +20,7 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build Next.js') {
             steps {
                 sh 'npm run build'
             }
@@ -22,8 +28,22 @@ pipeline {
 
         stage('Test') {
             steps {
-                // Nếu chưa có test, lệnh này sẽ không fail pipeline
                 sh 'npm test || true'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t $IMAGE_NAME ."
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                // Stop previous container if exists
+                sh "docker rm -f $CONTAINER_NAME || true"
+                // Run new container
+                sh "docker run -d --name $CONTAINER_NAME -p $PORT:$PORT $IMAGE_NAME"
             }
         }
     }
@@ -34,12 +54,10 @@ pipeline {
             junit '**/test-results.xml'
         }
         success {
-            echo '✅ Build completed successfully!'
+            echo '✅ Build & deploy completed successfully!'
         }
         failure {
-            echo '❌ Build failed!'
+            echo '❌ Pipeline failed!'
         }
     }
 }
-// This Jenkinsfile is for a Next.js application
-// It defines a pipeline with stages for checkout, installing dependencies, building the app, and running tests.
