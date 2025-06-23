@@ -8,11 +8,45 @@ pipeline {
   environment {
     APP_DIR = 'reactapp'
   }
-stages {
-        stage('Test') {
-            steps {
-                sh 'node --eval "console.log(process.platform,process.env.CI)"'
-            }
-        }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'main', url: 'https://github.com/jjoevv/blog_nextjs.git'
+      }
     }
+
+    stage('Install dependencies') {
+      steps {
+        dir("${APP_DIR}") {
+          sh 'npm install'
+        }
+      }
+    }
+
+    stage('Build') {
+      steps {
+        dir("${APP_DIR}") {
+          sh 'npm run build'
+        }
+      }
+    }
+
+    stage('Run app') {
+      steps {
+        dir("${APP_DIR}") {
+          sh 'nohup npm start &'
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "✅ App is running"
+    }
+    failure {
+      echo "❌ Build failed"
+    }
+  }
 }
