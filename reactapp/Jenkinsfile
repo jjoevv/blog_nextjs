@@ -15,11 +15,6 @@ pipeline {
     CONTAINER_NAME = 'my-react-app-container'
     PORT = '3000'
   }
-stage('Check Docker') {
-  steps {
-    sh 'docker --version && docker ps'
-  }
-}
 // and dependencies before building a new Docker image and running it as a container.
   stages {
     stage('Checkout') {
@@ -28,6 +23,11 @@ stage('Check Docker') {
       }
     }
 
+stage('Check Docker') {
+  steps {
+    sh 'docker --version && docker ps'
+  }
+}
     stage('Install Dependencies') {
       steps {
         dir("${APP_DIR}") {
