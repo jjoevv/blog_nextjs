@@ -1,8 +1,9 @@
 pipeline {
   agent {
     docker {
-      image 'node:18'
-       args '-u root'
+        image 'node:18'
+        args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
+
     }
   }
 
@@ -14,7 +15,12 @@ pipeline {
     CONTAINER_NAME = 'my-react-app-container'
     PORT = '3000'
   }
-
+stage('Check Docker') {
+  steps {
+    sh 'docker --version && docker ps'
+  }
+}
+// and dependencies before building a new Docker image and running it as a container.
   stages {
     stage('Checkout') {
       steps {
