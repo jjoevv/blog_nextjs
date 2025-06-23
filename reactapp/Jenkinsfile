@@ -1,13 +1,13 @@
 pipeline {
   agent {
     docker {
-      image 'node:18' // hoặc node:20 nếu app cần mới hơn
+      image 'node:18' 
     }
   }
 
   environment {
-    APP_DIR = 'reactapp';
-    HOME = '/var/lib/jenkins';
+    APP_DIR = 'reactapp'
+    HOME = '/var/lib/jenkins'
   }
 
   stages {
@@ -16,20 +16,22 @@ pipeline {
         git branch: 'main', url: 'https://github.com/jjoevv/blog_nextjs.git'
       }
     }
-  }
 
     stage('Install Dependencies') {
-        steps {
-            dir('reactapp') {
-            sh '''
-                rm -rf node_modules package-lock.json
-                npm cache clean --force
-                npm install
-            '''
-            }
-        }
-}
+      steps {
+        dir("${APP_DIR}") {
+          sh '''
+            echo " Cleaning old dependencies..."
+            rm -rf node_modules package-lock.json
+            npm cache clean --force
 
+            echo " Installing packages..."
+            npm install
+          '''
+        }
+      }
+    }
+  }
 
   post {
     success {
@@ -40,3 +42,5 @@ pipeline {
     }
   }
 }
+// This Jenkinsfile is designed to run a React application using a Node.js Docker image.
+// It checks out the code from a Git repository, installs dependencies, and cleans up old files
