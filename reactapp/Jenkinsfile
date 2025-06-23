@@ -8,8 +8,8 @@ pipeline {
 
   environment {
     APP_DIR = 'reactapp'
-    HOME = '/var/lib/jenkins'
-    NPM_CONFIG_CACHE = "${HOME}/.npm"
+    HOME = '/home/node'
+    NPM_CONFIG_CACHE = '/home/node/.npm'
   }
 
   stages {
