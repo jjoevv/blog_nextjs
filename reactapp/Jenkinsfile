@@ -2,10 +2,8 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'blog_nextjs_app'
-        CONTAINER_NAME = 'blog_nextjs_container'
+        APP_DIR = 'reactapp' // thư mục chứa source code (nếu cần)
         PORT = '3000'
-        DOCKER_CONTEXT = 'reactapp'  // vì Dockerfile nằm trong reactapp/
     }
 
     stages {
@@ -15,27 +13,31 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Install dependencies') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh "docker build -t $IMAGE_NAME $DOCKER_CONTEXT"
-                    } else {
-                        bat "docker build -t %IMAGE_NAME% %DOCKER_CONTEXT%"
-                    }
+                dir("${APP_DIR}") {
+                    sh 'npm install'
                 }
             }
         }
 
-        stage('Run Docker Container') {
+        stage('Build') {
+            steps {
+                dir("${APP_DIR}") {
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('Start app') {
             steps {
                 script {
-                    if (isUnix()) {
-                        sh "docker rm -f $CONTAINER_NAME || true"
-                        sh "docker run -d --name $CONTAINER_NAME -p $PORT:$PORT $IMAGE_NAME"
-                    } else {
-                        bat "docker rm -f %CONTAINER_NAME% || exit 0"
-                        bat "docker run -d --name %CONTAINER_NAME% -p %PORT%:%PORT% %IMAGE_NAME%"
+                    // Dừng app đang chạy nếu có (tuỳ thuộc vào cách start)
+                    sh "pkill -f 'node' || true"
+
+                    // Chạy app nền (Next.js: npm run start)
+                    dir("${APP_DIR}") {
+                        sh 'nohup npm start &'
                     }
                 }
             }
@@ -44,10 +46,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ App is running at http://localhost:$PORT"
+            echo "✅ App đang chạy ở http://localhost:$PORT"
         }
         failure {
-            echo '❌ Build failed!'
+            echo "❌ Build failed"
         }
     }
 }
