@@ -10,6 +10,9 @@ pipeline {
     APP_DIR = 'reactapp'
     HOME = '/home/node'
     NPM_CONFIG_CACHE = '/home/node/.npm'
+    IMAGE_NAME = 'my-react-app'
+    CONTAINER_NAME = 'my-react-app-container'
+    PORT = '3000'
   }
 
   stages {
@@ -31,6 +34,26 @@ pipeline {
             npm install
           '''
         }
+      }
+    }
+     stage('Build Docker Image') {
+      steps {
+        sh '''
+          echo "🐳 Building Docker image..."
+          docker build -t $IMAGE_NAME ./${APP_DIR}
+        '''
+      }
+    }
+
+    stage('Deploy Docker Container') {
+      steps {
+        sh '''
+          echo "🚀 Stopping old container (if exists)..."
+          docker rm -f $CONTAINER_NAME || true
+
+          echo "🚀 Starting new container..."
+          docker run -d --name $CONTAINER_NAME -p $PORT:$PORT $IMAGE_NAME
+        '''
       }
     }
   }
