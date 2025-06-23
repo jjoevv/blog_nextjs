@@ -5,6 +5,7 @@ pipeline {
         IMAGE_NAME = 'blog_nextjs_app'
         CONTAINER_NAME = 'blog_nextjs_container'
         PORT = '3000'
+        DOCKER_CONTEXT = 'reactapp'  // vì Dockerfile nằm trong reactapp/
     }
 
     stages {
@@ -18,9 +19,9 @@ pipeline {
             steps {
                 script {
                     if (isUnix()) {
-                        sh "docker build -t $IMAGE_NAME ."
+                        sh "docker build -t $IMAGE_NAME $DOCKER_CONTEXT"
                     } else {
-                        bat "docker build -t %IMAGE_NAME% ."
+                        bat "docker build -t %IMAGE_NAME% %DOCKER_CONTEXT%"
                     }
                 }
             }
