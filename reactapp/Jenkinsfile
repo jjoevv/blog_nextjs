@@ -30,23 +30,6 @@ pipeline {
 }
 
 
-    stage('Build') {
-      steps {
-        dir("${APP_DIR}") {
-          sh 'npm run build'
-        }
-      }
-    }
-
-    stage('Run app') {
-      steps {
-        dir("${APP_DIR}") {
-          sh 'nohup npm start &'
-        }
-      }
-    }
-  }
-
   post {
     success {
       echo "✅ App is running"
