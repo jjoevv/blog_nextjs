@@ -6,7 +6,8 @@ pipeline {
   }
 
   environment {
-    APP_DIR = 'reactapp'
+    APP_DIR = 'reactapp';
+    HOME = '/var/lib/jenkins';
   }
 
   stages {
@@ -16,13 +17,18 @@ pipeline {
       }
     }
 
-    stage('Install dependencies') {
-      steps {
-        dir("${APP_DIR}") {
-          sh 'npm install'
-        }
-      }
+    stage('Install Dependencies') {
+  steps {
+    dir('reactapp') {
+      sh '''
+        rm -rf node_modules package-lock.json
+        npm cache clean --force
+        npm install
+      '''
     }
+  }
+}
+
 
     stage('Build') {
       steps {
