@@ -1,8 +1,8 @@
 pipeline {
   agent {
     docker {
-      image 'node:20'
-      args '-u node -v /var/lib/jenkins:/var/lib/jenkins -v /var/run/docker.sock:/var/run/docker.sock'
+      image 'node:18'
+      args '-u node --workdir /home/node'
     }
   }
 
@@ -18,6 +18,12 @@ pipeline {
         git branch: 'main', url: 'https://github.com/jjoevv/blog_nextjs.git'
       }
     }
+    stage('Test Shell') {
+        steps {
+            sh 'echo Hello from Shell'
+        }
+    }
+
 
     stage('Install Dependencies') {
       steps {
