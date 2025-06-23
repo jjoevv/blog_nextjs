@@ -1,9 +1,8 @@
 pipeline {
   agent {
     docker {
-        image 'node:18'
-        args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
-
+      image 'node:18'
+      args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
 
@@ -15,34 +14,38 @@ pipeline {
     CONTAINER_NAME = 'my-react-app-container'
     PORT = '3000'
   }
-// and dependencies before building a new Docker image and running it as a container.
+
   stages {
+    stage('Setup Docker CLI') {
+      steps {
+        sh '''
+          apt-get update || { echo "Failed to update apt"; exit 1; }
+          apt-get install -y docker.io || { echo "Failed to install docker.io"; exit 1; }
+          docker --version || { echo "Docker CLI not working"; exit 1; }
+        '''
+      }
+    }
+
     stage('Checkout') {
       steps {
         git branch: 'main', url: 'https://github.com/jjoevv/blog_nextjs.git'
       }
     }
 
-stage('Check Docker') {
-  steps {
-    sh 'docker --version && docker ps'
-  }
-}
     stage('Install Dependencies') {
       steps {
         dir("${APP_DIR}") {
           sh '''
-            echo " Cleaning old dependencies..."
-            rm -rf node_modules package-lock.json
+            echo "Cleaning npm cache..."
             npm cache clean --force
-
-            echo " Installing packages..."
-            npm install
+            echo "Installing packages..."
+            npm ci --cache $NPM_CONFIG_CACHE
           '''
         }
       }
     }
-     stage('Build Docker Image') {
+
+    stage('Build Docker Image') {
       steps {
         sh '''
           echo "🐳 Building Docker image..."
@@ -56,7 +59,8 @@ stage('Check Docker') {
         sh '''
           echo "🚀 Stopping old container (if exists)..."
           docker rm -f $CONTAINER_NAME || true
-
+          echo "🚀 Checking port $PORT..."
+          docker ps -q --filter "publish=$PORT" && docker rm -f $(docker ps -q --filter "publish=$PORT") || true
           echo "🚀 Starting new container..."
           docker run -d --name $CONTAINER_NAME -p $PORT:$PORT $IMAGE_NAME
         '''
@@ -73,5 +77,3 @@ stage('Check Docker') {
     }
   }
 }
-// This Jenkinsfile is designed to run a React application using a Node.js Docker image.
-// It checks out the code from a Git repository, installs dependencies, and cleans up old files
