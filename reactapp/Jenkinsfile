@@ -17,17 +17,12 @@ pipeline {
         git branch: 'main', url: 'https://github.com/jjoevv/blog_nextjs.git'
       }
     }
-    stage('Test Shell') {
-        steps {
-            sh 'echo Hello from Shell'
-        }
-    }
-
 
     stage('Install Dependencies') {
       steps {
         dir("${APP_DIR}") {
           sh '''
+            chown -R $(whoami):$(whoami) $HOME/.npm
             echo " Cleaning old dependencies..."
             rm -rf node_modules package-lock.json
             npm cache clean --force
