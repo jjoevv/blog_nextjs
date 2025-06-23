@@ -1,55 +1,52 @@
 pipeline {
-    agent any
+  agent {
+    docker {
+      image 'node:18' // hoặc node:20 nếu app cần mới hơn
+    }
+  }
 
-    environment {
-        APP_DIR = 'reactapp' // thư mục chứa source code (nếu cần)
-        PORT = '3000'
+  environment {
+    APP_DIR = 'reactapp'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'main', url: 'https://github.com/jjoevv/blog_nextjs.git'
+      }
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/jjoevv/blog_nextjs.git'
-            }
+    stage('Install dependencies') {
+      steps {
+        dir("${APP_DIR}") {
+          sh 'npm install'
         }
-
-        stage('Install dependencies') {
-            steps {
-                dir("${APP_DIR}") {
-                    sh 'npm install'
-                }
-            }
-        }
-
-        stage('Build') {
-            steps {
-                dir("${APP_DIR}") {
-                    sh 'npm run build'
-                }
-            }
-        }
-
-        stage('Start app') {
-            steps {
-                script {
-                    // Dừng app đang chạy nếu có (tuỳ thuộc vào cách start)
-                    sh "pkill -f 'node' || true"
-
-                    // Chạy app nền (Next.js: npm run start)
-                    dir("${APP_DIR}") {
-                        sh 'nohup npm start &'
-                    }
-                }
-            }
-        }
+      }
     }
 
-    post {
-        success {
-            echo "✅ App đang chạy ở http://localhost:$PORT"
+    stage('Build') {
+      steps {
+        dir("${APP_DIR}") {
+          sh 'npm run build'
         }
-        failure {
-            echo "❌ Build failed"
-        }
+      }
     }
+
+    stage('Run app') {
+      steps {
+        dir("${APP_DIR}") {
+          sh 'nohup npm start &'
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "✅ App is running"
+    }
+    failure {
+      echo "❌ Build failed"
+    }
+  }
 }
