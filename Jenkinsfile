@@ -7,70 +7,69 @@ pipeline {
   }
 
   environment {
-    HOME = '/home/node'
-    NPM_CONFIG_CACHE = '/home/node/.npm'
-    IMAGE_NAME = 'my-app'
-    CONTAINER_NAME = 'my-app-container'
-    PORT = '3000'
+    BACKEND_IMAGE = 'hngthaovy/demo-nextappbe'    // ← Thay tên image DockerHub của bạn
+    CONTAINER_NAME = 'backend-app'
+    PORT = '5000'                                  // ← Cổng backend nếu có
+    DOCKERHUB_CREDENTIALS = 'dockerhub-creds'      // ← ID của Jenkins credential chứa DockerHub user/pass
   }
 
   stages {
-    stage('Setup Docker CLI') {
-      steps {
-        sh '''
-          apt-get update || { echo "Failed to update apt"; exit 1; }
-          apt-get install -y docker.io || { echo "Failed to install docker.io"; exit 1; }
-          docker --version || { echo "Docker CLI not working"; exit 1; }
-        '''
-      }
-    }
-
     stage('Checkout') {
       steps {
-        git branch: 'main', url: 'https://github.com/jjoevv/blog_nextjs.git'
+        git branch: 'be', url: 'https://github.com/jjoevv/blog_nextjs.git' // nhánh be
       }
     }
 
-    stage('Install Dependencies') {
+    stage('Install dependencies') {
       steps {
-        sh '''
-          echo "Cleaning npm cache..."
-          npm cache clean --force
-          echo "Installing packages..."
-          npm ci --cache $NPM_CONFIG_CACHE
-        '''
+        dir('blog-be') {
+          sh '''
+            npm install
+          '''
+        }
       }
     }
 
     stage('Build Docker Image') {
       steps {
-        sh '''
-          echo "🐳 Building Docker image..."
-          docker build -t $IMAGE_NAME
-        '''
+        script {
+          sh '''
+            echo "🐳 Building backend Docker image..."
+            docker build -t $BACKEND_IMAGE ./backend
+          '''
+        }
       }
     }
 
-    stage('Deploy Docker Container') {
+    stage('Push to DockerHub') {
       steps {
-        sh '''
-          echo "🚀 Stopping old container (if exists)..."
-          docker rm -f $CONTAINER_NAME || true
-          echo "🚀 Checking port $PORT..."
-          docker ps -q --filter "publish=$PORT" && docker rm -f $(docker ps -q --filter "publish=$PORT") || true
-          echo "🚀 Starting new container..."
-          docker run -d --name $CONTAINER_NAME -p $PORT:$PORT $IMAGE_NAME
-        '''
+        withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          sh '''
+            echo "🔐 Logging in to DockerHub..."
+            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+            docker push $BACKEND_IMAGE
+          '''
+        }
       }
     }
+
+    // Optional: Run container locally
+    // stage('Deploy') {
+    //   steps {
+    //     sh '''
+    //       docker rm -f $CONTAINER_NAME || true
+    //       docker run -d --name $CONTAINER_NAME -p $PORT:$PORT $BACKEND_IMAGE
+    //     '''
+    //   }
+    // }
   }
 
   post {
     success {
-      echo "✅ App is running"
+      echo "✅ Backend pipeline completed!"
     }
     failure {
-      echo "❌ Build failed"
+      echo "❌ Backend pipeline failed."
     }
   }
 }
