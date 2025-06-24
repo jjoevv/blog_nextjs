@@ -7,7 +7,6 @@ pipeline {
   }
 
   environment {
-    APP_DIR = 'nextapp'
     HOME = '/home/node'
     NPM_CONFIG_CACHE = '/home/node/.npm'
     IMAGE_NAME = 'my-app'
@@ -34,14 +33,12 @@ pipeline {
 
     stage('Install Dependencies') {
       steps {
-        dir("${APP_DIR}") {
-          sh '''
-            echo "Cleaning npm cache..."
-            npm cache clean --force
-            echo "Installing packages..."
-            npm ci --cache $NPM_CONFIG_CACHE
-          '''
-        }
+        sh '''
+          echo "Cleaning npm cache..."
+          npm cache clean --force
+          echo "Installing packages..."
+          npm ci --cache $NPM_CONFIG_CACHE
+        '''
       }
     }
 
@@ -49,7 +46,7 @@ pipeline {
       steps {
         sh '''
           echo "🐳 Building Docker image..."
-          docker build -t $IMAGE_NAME ./${APP_DIR}
+          docker build -t $IMAGE_NAME
         '''
       }
     }
