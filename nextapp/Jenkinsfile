@@ -7,11 +7,11 @@ pipeline {
   }
 
   environment {
-    APP_DIR = 'reactapp'
+    APP_DIR = 'nextapp'
     HOME = '/home/node'
     NPM_CONFIG_CACHE = '/home/node/.npm'
-    IMAGE_NAME = 'my-react-app'
-    CONTAINER_NAME = 'my-react-app-container'
+    IMAGE_NAME = 'my-app'
+    CONTAINER_NAME = 'my-app-container'
     PORT = '3000'
   }
 
