@@ -35,7 +35,7 @@ pipeline {
         script {
           sh '''
             echo "🐳 Building backend Docker image..."
-            docker build -t $BACKEND_IMAGE ./backend
+            docker build -t $BACKEND_IMAGE ./blog-be
           '''
         }
       }
