@@ -7,88 +7,69 @@ pipeline {
   }
 
   environment {
-    HOME = '/home/node'
-    NPM_CONFIG_CACHE = '/home/node/.npm'
-    IMAGE_NAME = 'demo-nextappbe'
-    CONTAINER_NAME = 'nextapp-be-container'
-    PORT = '4000' // nếu backend chạy port khác, sửa tại đây
+    BACKEND_IMAGE = 'hngthaovy/demo-nextappbe'    // ← Thay tên image DockerHub của bạn
+    CONTAINER_NAME = 'backend-app'
+    PORT = '5000'                                  // ← Cổng backend nếu có
+    DOCKERHUB_CREDENTIALS = 'dockerhub-creds'      // ← ID của Jenkins credential chứa DockerHub user/pass
   }
 
   stages {
-
-    stage('Ensure running only on be branch') {
-      when {
-        expression { env.BRANCH_NAME == 'be' }
-      }
-      steps {
-        echo "🟢 Running backend pipeline on branch: ${env.BRANCH_NAME}"
-      }
-    }
-
-    stage('Install Docker CLI') {
-      steps {
-        sh '''
-          apt-get update && apt-get install -y docker.io
-        '''
-      }
-    }
-
     stage('Checkout') {
       steps {
-        git branch: 'be', url: 'https://github.com/jjoevv/blog_nextjs.git'
+        git branch: 'be', url: 'https://github.com/jjoevv/blog_nextjs.git' // nhánh be
       }
     }
 
-    stage('Install Backend Dependencies') {
+    stage('Install dependencies') {
       steps {
         dir('blog-be') {
           sh '''
-            echo "📦 Installing backend dependencies..."
-            npm ci || npm install
+            npm install
+          '''
+        }
+      }
+    }
+    /*
+    stage('Build Docker Image') {
+      steps {
+        script {
+          sh '''
+            echo "🐳 Building backend Docker image..."
+            docker build -t $BACKEND_IMAGE ./blog-be
           '''
         }
       }
     }
 
-    stage('Build Backend Docker Image') {
+    stage('Push to DockerHub') {
       steps {
-        sh '''
-          echo "🐳 Building Docker image..."
-          docker build -t $IMAGE_NAME ./blog-be
-        '''
-      }
-    }
-
-    stage('Push Image to DockerHub') {
-      steps {
-        withCredentials([
-          usernamePassword(
-            credentialsId: 'dockerhub-creds',
-            usernameVariable: 'DOCKERHUB_USERNAME',
-            passwordVariable: 'DOCKERHUB_PASSWORD'
-          )
-        ]) {
+        withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           sh '''
             echo "🔐 Logging in to DockerHub..."
-            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-
-            echo "🏷️ Tagging image..."
-            docker tag $IMAGE_NAME $DOCKERHUB_USERNAME/$IMAGE_NAME
-
-            echo "🚀 Pushing image to DockerHub..."
-            docker push $DOCKERHUB_USERNAME/$IMAGE_NAME
+            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+            docker push $BACKEND_IMAGE
           '''
         }
       }
     }
+    */
+    // Optional: Run container locally
+    // stage('Deploy') {
+    //   steps {
+    //     sh '''
+    //       docker rm -f $CONTAINER_NAME || true
+    //       docker run -d --name $CONTAINER_NAME -p $PORT:$PORT $BACKEND_IMAGE
+    //     '''
+    //   }
+    // }
   }
 
   post {
     success {
-      echo "✅ Backend image pushed successfully!"
+      echo "✅ Deployment completed!"
     }
     failure {
-      echo "❌ Something went wrong in the backend pipeline"
+      echo "❌ Deployment failed!"
     }
   }
 }
