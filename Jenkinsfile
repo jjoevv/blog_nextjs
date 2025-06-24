@@ -105,3 +105,7 @@ pipeline {
     }
   }
 }
+// This Jenkinsfile defines a pipeline for building and deploying a Next.js frontend application
+// It runs only on the 'fe' branch, installs Docker, checks out the source code,
+// installs dependencies, builds a Docker image, deploys it as a container,
+// and pushes the image to DockerHub.
