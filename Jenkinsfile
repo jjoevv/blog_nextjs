@@ -15,9 +15,9 @@ pipeline {
   }
 
   stages {
-    stage('Run only on main') {
+    stage('Run only on fe') {
       when {
-        expression { env.BRANCH_NAME == 'main' }
+        expression { env.BRANCH_NAME == 'fe' }
       }
       stages {
         stage('Setup Docker CLI') {
