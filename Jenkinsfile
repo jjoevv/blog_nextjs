@@ -7,8 +7,8 @@ pipeline {
   }
 
   environment {
-    HOME = '/home/node'
-    NPM_CONFIG_CACHE = '/home/node/.npm'
+    //HOME = '/home/node'
+    //NPM_CONFIG_CACHE = '/home/node/.npm'
 
     // Frontend
     FE_DIR = 'blog-fe'
@@ -38,7 +38,23 @@ pipeline {
         '''
       }
     }
+    // Install dependencies for both frontend and backend
+    stage('Install Frontend') {
+          steps {
+            dir('blog-fe') {
+              sh 'npm ci || npm install'
+            }
+          }
+        }
 
+        stage('Install Backend') {
+          steps {
+            dir('blog-be') {
+              sh 'npm ci || npm install'
+            }
+          }
+        }
+        
     // Frontend Build & Deploy
     stage('Build & Deploy Frontend') {
       steps {
