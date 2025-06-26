@@ -1,5 +1,8 @@
 pipeline {
-  agent any
+    docker {
+    image 'node:18'
+    args '-u root'
+  }
 
   environment {
     IMAGE_NAME = 'demo-nextappfe'
