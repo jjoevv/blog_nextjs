@@ -1,7 +1,6 @@
 pipeline {
   agent {
     docker {
-      image 'node:18'
       args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
@@ -17,6 +16,10 @@ pipeline {
 
   options {
     skipDefaultCheckout(true)
+    buildDiscarder logRotator( 
+            daysToKeepStr: '16', 
+            numToKeepStr: '10'
+        )
   }
 
   stages {
@@ -25,21 +28,42 @@ pipeline {
         expression { env.BRANCH_NAME == 'fe' }
       }
       stages {
-        stage('Install Docker CLI') {
+
+        /*stage('Install Docker CLI') {
           steps {
             sh '''
               apt-get update && apt-get install -y docker.io
               docker --version
             '''
           }
+        }*/
+        stage('Cleanup Workspace') {
+            steps {
+                cleanWs()
+                sh """
+                echo "Cleaned Up Workspace For Project"
+                """
+            }
         }
-
         stage('Checkout Source Code') {
           steps {
             git branch: 'fe', url: 'https://github.com/jjoevv/blog_nextjs.git'
           }
         }
-
+        stage('Unit Testing') {
+                    steps {
+                        sh """
+                        echo "Running Unit Tests"
+                        """
+                    }
+                }
+                stage('Code Analysis') {
+            steps {
+                sh """
+                echo "Running Code Analysis"
+                """
+            }
+        }
         stage('Install FE Dependencies') {
           steps {
             dir('blog-fe') {
