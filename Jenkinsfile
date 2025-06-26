@@ -1,9 +1,5 @@
 pipeline {
-  agent {
-    docker {
-      args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
-    }
-  }
+  agent any
 
   environment {
     HOME = '/home/node'
