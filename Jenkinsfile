@@ -29,7 +29,7 @@ pipeline {
         git branch: 'main', url: 'https://github.com/jjoevv/blog_nextjs.git'
       }
     }
-    /*stage('Install Docker CLI') {
+    stage('Install Docker CLI') {
       steps {
         sh '''
           apt-get update
@@ -37,7 +37,7 @@ pipeline {
           docker --version
         '''
       }
-    }*/
+    }
 
     // Frontend Build & Deploy
     stage('Build & Deploy Frontend') {
