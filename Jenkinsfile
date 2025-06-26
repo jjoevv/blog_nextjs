@@ -2,8 +2,6 @@ pipeline {
   agent any
 
   environment {
-    HOME = '/home/node'
-    NPM_CONFIG_CACHE = '/home/node/.npm'
     IMAGE_NAME = 'demo-nextappfe'
     DOCKERHUB_USERNAME = 'hngthaovy'
     CONTAINER_NAME = 'nextapp-fe-container'
