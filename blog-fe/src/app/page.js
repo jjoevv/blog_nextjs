@@ -14,7 +14,7 @@ export default function Home() {
         />
         <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
          <li className="tracking-[-.01em]">
-            Hello, this is my app demo.
+            Hello, this is my app demo for CICD with Jenkins.
           </li>
           <li className="mb-2 tracking-[-.01em]">
             Get started by editing{" "}
