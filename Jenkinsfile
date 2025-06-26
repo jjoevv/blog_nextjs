@@ -3,13 +3,13 @@ pipeline {
     image 'node:18'
     args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
   }
-
+/*
   environment {
     IMAGE_NAME = 'demo-nextappfe'
     DOCKERHUB_USERNAME = 'hngthaovy'
     CONTAINER_NAME = 'nextapp-fe-container'
     PORT = '3000'
-  }
+  }*/
 
   options {
     skipDefaultCheckout(true)
