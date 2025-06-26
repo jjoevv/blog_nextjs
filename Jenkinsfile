@@ -39,9 +39,7 @@ pipeline {
         stage('Cleanup Workspace') {
             steps {
                 cleanWs()
-                sh """
                 echo "Cleaned Up Workspace For Project"
-                """
             }
         }
         stage('Checkout Source Code') {
@@ -49,16 +47,19 @@ pipeline {
             git branch: 'fe', url: 'https://github.com/jjoevv/blog_nextjs.git'
           }
         }
+
         stage('Unit Testing') {
             steps {
                 echo "Running Unit Tests"
             }
         }
-              stage('Code Analysis') {
+
+        stage('Code Analysis') {
           steps {
               echo "Running Code Analysis"
           }
         }
+
         stage('Install FE Dependencies') {
           steps {
             dir('blog-fe') {
