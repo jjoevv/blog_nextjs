@@ -50,18 +50,14 @@ pipeline {
           }
         }
         stage('Unit Testing') {
-                    steps {
-                        sh """
-                        echo "Running Unit Tests"
-                        """
-                    }
-                }
-                stage('Code Analysis') {
             steps {
-                sh """
-                echo "Running Code Analysis"
-                """
+                echo "Running Unit Tests"
             }
+        }
+              stage('Code Analysis') {
+          steps {
+              echo "Running Code Analysis"
+          }
         }
         stage('Install FE Dependencies') {
           steps {
