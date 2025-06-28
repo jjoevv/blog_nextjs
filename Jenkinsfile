@@ -1,131 +1,134 @@
 pipeline {
-    agent {
-    docker {
-      image 'node:18'
-      args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')      // Jenkins Credentials: username & password
+        DOCKERHUB_USERNAME = "${DOCKERHUB_CREDENTIALS_USR}"         // Username for Docker Hub
+        DOCKERHUB_PASSWORD = "${DOCKERHUB_CREDENTIALS_PSW}"         // Password for Docker Hub
+        TAG = "${env.BUILD_NUMBER}"                                 // Tag for images using Jenkins build number
+
+        USER_SERVER = 'dev'                                         // SSH user on lab server
+        SERVER_IP = credentials('LAB_SERVER_IP')                    // Lab server IP from Secret Text Credential
+
+        IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"           // Docker Hub FE image
+        IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"           // Docker Hub BE image
     }
-  }
-/*
-  environment {
-    IMAGE_NAME = 'demo-nextappfe'
-    DOCKERHUB_USERNAME = 'hngthaovy'
-    CONTAINER_NAME = 'nextapp-fe-container'
-    PORT = '3000'
-  }*/
 
-  options {
-    skipDefaultCheckout(true)
-    buildDiscarder logRotator( 
-            daysToKeepStr: '16', 
-            numToKeepStr: '10'
-        )
-  }
+    parameters {
+        booleanParam(name: 'ROLLBACK', defaultValue: false, description: 'Tick to rollback instead of deploy') // Parameter to decide if we are rolling back
+        string(name: 'ROLLBACK_TAG', defaultValue: '', description: 'Image tag to rollback (required if ROLLBACK is true)') // Tag to rollback to, required if ROLLBACK is true
+    }
 
-  stages {
-    stage('Run only on fe branch') {
-      when {
-        expression { env.BRANCH_NAME == 'fe' }
-      }
-      stages {
-
-        /*stage('Install Docker CLI') {
-          steps {
-            sh '''
-              apt-get update && apt-get install -y docker.io
-              docker --version
-            '''
-          }
-        }*/
-        stage('Cleanup Workspace') {
+    stages {
+        stage('Checkout') { // Checkout the code from SCM
             steps {
-                cleanWs()
-                echo "Cleaned Up Workspace For Project"
+                checkout scm // This will checkout the code from the configured SCM (e.g., Git)
             }
         }
-        stage('Checkout Source Code') {
-          steps {
-            git branch: 'fe', url: 'https://github.com/jjoevv/blog_nextjs.git'
-          }
-        }
 
-        stage('Unit Testing') {
+        // Stage to build and push Docker images
+        // Only run this stage if ROLLBACK is false
+        stage('Build & Push Images') {
+            when {
+                expression { !params.ROLLBACK }  // Check if ROLLBACK is false
+            }
             steps {
-                echo "Running Unit Tests"
+                script { 
+                    // Ensure Docker is installed and running
+                    // Check if Docker is running
+                    sh 'docker info || { echo "Docker is not running. Exiting."; exit 1; }'
+
+                    // Login to Docker Hub
+                    // Build and push Docker images for frontend and backend 
+                    // using the credentials stored in Jenkins
+                    
+                    sh """
+                    echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+                    docker build -t $IMAGE_FE:latest -t $IMAGE_FE:$TAG ./frontend
+                    docker build -t $IMAGE_BE:latest -t $IMAGE_BE:$TAG ./backend
+
+                    docker push $IMAGE_FE:latest
+                    docker push $IMAGE_FE:$TAG
+
+                    docker push $IMAGE_BE:latest
+                    docker push $IMAGE_BE:$TAG
+
+                    docker logout
+                    """
+                }
             }
         }
 
-        stage('Code Analysis') {
-          steps {
-              echo "Running Code Analysis"
-          }
-        }
+        // Stage to deploy or rollback the application
+        // This stage will run regardless of the ROLLBACK parameter
+        // It will either deploy the latest images or rollback to a specified tag
+        // Uses SSH to connect to the lab server and manage Docker containers
+        // If ROLLBACK is true, it will pull the specified tag and redeploy
+        // If ROLLBACK is false, it will pull the latest images and redeploy
+        // Uses the credentials stored in Jenkins for SSH access
+        // The server IP is stored in a Secret Text Credential
+        // The deployment is done using docker-compose to manage the containers
+        stage('Deploy or Rollback') {
+            steps {
+                script {
+                    sshagent(credentials: ['lab-server-ssh']) { // Use SSH agent to manage the SSH credentials
+                        
+                        // Check if ROLLBACK is true
+                        if (params.ROLLBACK) {
+                            if (!params.ROLLBACK_TAG) {
+                                error("❌ ROLLBACK_TAG is required when ROLLBACK is true.")
+                            }
+                            // If ROLLBACK is true, pull the specified tag and redeploy
+                            sh """
+                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
+                                echo "🔄 Rolling back to tag ${params.ROLLBACK_TAG}..."
 
-        stage('Install FE Dependencies') {
-          steps {
-            dir('blog-fe') {
-              sh '''
-                echo "📦 Installing frontend dependencies..."
-                npm ci || npm install
-              '''
+                                docker pull ${IMAGE_FE}:${params.ROLLBACK_TAG}
+                                docker pull ${IMAGE_BE}:${params.ROLLBACK_TAG}
+
+                                docker tag ${IMAGE_FE}:${params.ROLLBACK_TAG} ${IMAGE_FE}:latest
+                                docker tag ${IMAGE_BE}:${params.ROLLBACK_TAG} ${IMAGE_BE}:latest
+
+                                cd /path/to/project &&
+                                docker-compose up -d
+
+                                echo "✅ Rollback complete."
+                            '
+                            """
+                        } else {
+                            // If ROLLBACK is false, pull the latest images and redeploy
+                            // This will ensure the latest images are used
+                            sh """
+                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
+                                echo "🚀 Deploying latest images..."
+
+                                docker pull ${IMAGE_FE}:latest
+                                docker pull ${IMAGE_BE}:latest
+
+                                cd /path/to/project &&
+                                docker-compose up -d
+
+                                echo "✅ Deployment complete."
+                            '
+                            """
+                        }
+                    }
+                }
             }
-          }
         }
-      /*
-        stage('Build Docker Image') {
-          steps {
-            sh '''
-              echo "🐳 Building frontend Docker image..."
-              docker build -t $IMAGE_NAME ./blog-fe
-            '''
-          }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline completed successfully.'
         }
-
-        stage('Deploy Docker Container') {
-          steps {
-            sh '''
-              echo "🚀 Stopping existing frontend container..."
-              docker rm -f $CONTAINER_NAME || true
-
-              echo "🚀 Starting new container..."
-              docker run -d --name $CONTAINER_NAME -p $PORT:$PORT $IMAGE_NAME
-            '''
-          }
+        failure {
+            echo '❌ Pipeline failed.'
         }
-
-        stage('Push Docker Image to DockerHub') {
-          steps {
-            withCredentials([usernamePassword(
-              credentialsId: 'dockerhub-creds',
-              usernameVariable: 'DOCKERHUB_USERNAME',
-              passwordVariable: 'DOCKERHUB_PASSWORD'
-            )]) {
-              sh '''
-                echo "🔐 Logging in to DockerHub..."
-                echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-
-                echo "🏷️ Tagging image..."
-                docker tag $IMAGE_NAME $DOCKERHUB_USERNAME/$IMAGE_NAME
-
-                echo "🚀 Pushing image to DockerHub..."
-                docker push $DOCKERHUB_USERNAME/$IMAGE_NAME
-              '''
-            }
-          }
-        }*/
-      }
+        always {
+            cleanWs()
+        }
     }
-  }
-
-  post {
-    success {
-      echo "✅ Frontend pipeline on branch 'fe' completed successfully!"
-    }
-    failure {
-      echo "❌ Frontend pipeline failed"
-    }
-  }
 }
-// This Jenkinsfile defines a pipeline for building and deploying a Next.js frontend application
-// It runs only on the 'fe' branch, installs Docker, checks out the source code,
-// installs dependencies, builds a Docker image, deploys it as a container,
-// and pushes the image to DockerHub.
+// Note: Replace 'yourdockerhubuser' with your actual Docker Hub username.

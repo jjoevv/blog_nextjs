@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:7
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  backend:
+    image: ${DOCKERHUB_USERNAME}/demo-nextappbe:latest
+    restart: always
+    environment:
+      - MONGO_URL=${MONGODB_URI}
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mongodb
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME}/demo-nextappfe:latest
+    restart: always
+    ports:
+      - "80:3000"
+    depends_on:
+      - backend
+
+volumes:
+  mongo-data:
