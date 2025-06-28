@@ -1,142 +1,104 @@
 pipeline {
-  agent {
-    docker {
-      image 'node:18'
-      args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds') // Jenkins Credentials (username & password)
+        DOCKERHUB_USERNAME = "${DOCKERHUB_CREDENTIALS_USR}"
+        DOCKERHUB_PASSWORD = "${DOCKERHUB_CREDENTIALS_PSW}"
+        IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"
+        IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"
+        TAG = "${env.BUILD_NUMBER}"
     }
-  }
 
-  environment {
-    //HOME = '/home/node'
-    //NPM_CONFIG_CACHE = '/home/node/.npm'
-
-    // Frontend
-    FE_DIR = 'blog-fe'
-    FE_IMAGE = 'demo-nextappfe'
-    FE_CONTAINER = 'frontend-container'
-    FE_PORT = '3000'
-
-    // Backend
-    BE_DIR = 'blog-be'
-    BE_IMAGE = 'demo-nextappbe'
-    BE_CONTAINER = 'backend-container'
-    BE_PORT = '4000'
-  }
-
-  stages {
-    stage('Checkout') {
-      steps {
-        git branch: 'main', url: 'https://github.com/jjoevv/blog_nextjs.git'
-      }
+    parameters {
+        booleanParam(name: 'ROLLBACK', defaultValue: false, description: 'Tick to rollback instead of deploy')
+        string(name: 'ROLLBACK_TAG', defaultValue: '', description: 'Image tag to rollback (required if ROLLBACK is true)')
     }
-    stage('Install Docker CLI') {
-      steps {
-        sh '''
-          apt-get update
-          apt-get install -y docker.io
-          docker --version
-        '''
-      }
-    }
-    // Install dependencies for both frontend and backend
-    stage('Install Frontend') {
-          steps {
-            dir('blog-fe') {
-              sh 'npm ci || npm install'
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
             }
-          }
         }
 
-        stage('Install Backend') {
-          steps {
-            dir('blog-be') {
-              sh 'npm ci || npm install'
+        stage('Build & Push Images') {
+            when {
+                expression { return !params.ROLLBACK }
             }
-          }
+            steps {
+                script {
+                    sh """
+                    echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+                    docker build -t $IMAGE_FE:latest -t $IMAGE_FE:$TAG ./frontend
+                    docker build -t $IMAGE_BE:latest -t $IMAGE_BE:$TAG ./backend
+
+                    docker push $IMAGE_FE:latest
+                    docker push $IMAGE_FE:$TAG
+
+                    docker push $IMAGE_BE:latest
+                    docker push $IMAGE_BE:$TAG
+
+                    docker logout
+                    """
+                }
+            }
         }
-        
-    // Frontend Build & Deploy
-    stage('Build & Deploy Frontend') {
-      steps {
-        dir("${FE_DIR}") {
-          sh '''
-            echo "📦 Installing frontend dependencies..."
-            npm install
 
-            echo "⚙️ Building frontend..."
-            npm run build
-          '''
+        stage('Deploy or Rollback') {
+            steps {
+                script {
+                    if (params.ROLLBACK) {
+                        if (!params.ROLLBACK_TAG) {
+                            error("ROLLBACK_TAG is required when ROLLBACK is true.")
+                        }
 
-          sh '''
-            echo "🐳 Building FE Docker image..."
-            docker build -t $FE_IMAGE .
+                        sh """
+                        ssh user@yourserver "
+                            echo '🔄 Rolling back to tag ${params.ROLLBACK_TAG}...'
 
-            echo "🛑 Stopping old FE container..."
-            docker rm -f $FE_CONTAINER || true
+                            docker pull $IMAGE_FE:${params.ROLLBACK_TAG}
+                            docker pull $IMAGE_BE:${params.ROLLBACK_TAG}
 
-            echo "🚀 Running FE container..."
-            docker run -d --name $FE_CONTAINER -p $FE_PORT:$FE_PORT $FE_IMAGE
-          '''
+                            docker tag $IMAGE_FE:${params.ROLLBACK_TAG} $IMAGE_FE:latest
+                            docker tag $IMAGE_BE:${params.ROLLBACK_TAG} $IMAGE_BE:latest
+
+                            cd /path/to/project &&
+                            docker-compose up -d
+
+                            echo '✅ Rollback complete.'
+                        "
+                        """
+                    } else {
+                        sh """
+                        ssh user@yourserver "
+                            echo '🚀 Deploying latest images...'
+
+                            docker pull $IMAGE_FE:latest
+                            docker pull $IMAGE_BE:latest
+
+                            cd /path/to/project &&
+                            docker-compose up -d
+
+                            echo '✅ Deployment complete.'
+                        "
+                        """
+                    }
+                }
+            }
         }
-      }
     }
 
-    // Backend Build & Deploy
-    stage('Build & Deploy Backend') {
-      steps {
-        dir("${BE_DIR}") {
-          sh '''
-            echo "📦 Installing backend dependencies..."
-            npm install
-
-            echo "⚙️ Building backend..."
-            npm run build || echo "Skipping build if not defined"
-          '''
-
-          sh '''
-            echo "🐳 Building BE Docker image..."
-            docker build -t $BE_IMAGE .
-
-            echo "🛑 Stopping old BE container..."
-            docker rm -f $BE_CONTAINER || true
-
-            echo "🚀 Running BE container..."
-            docker run -d --name $BE_CONTAINER -p $BE_PORT:$BE_PORT $BE_IMAGE
-          '''
+    post {
+        success {
+            echo '✅ Pipeline completed successfully.'
         }
-      }
-    }
-
-    // Push both images to DockerHub
-    stage('Push to DockerHub') {
-      steps {
-        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
-          sh '''
-            echo "🔐 Logging in to DockerHub..."
-            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-
-            echo "📤 Tagging and pushing FE image..."
-            docker tag $FE_IMAGE $DOCKERHUB_USERNAME/$FE_IMAGE
-            docker push $DOCKERHUB_USERNAME/$FE_IMAGE
-
-            echo "📤 Tagging and pushing BE image..."
-            docker tag $BE_IMAGE $DOCKERHUB_USERNAME/$BE_IMAGE
-            docker push $DOCKERHUB_USERNAME/$BE_IMAGE
-          '''
+        failure {
+            echo '❌ Pipeline failed.'
         }
-      }
+        always {
+            cleanWs()
+        }
     }
-  }
-
-  post {
-    success {
-      echo "✅ Frontend & Backend deployed successfully!"
-    }
-    failure {
-      echo "❌ Build failed!"
-    }
-  }
 }
-// This Jenkinsfile defines a CI/CD pipeline for a Next.js application with both frontend and backend components.
-// It builds Docker images for both components, runs them in containers, and pushes the images to DockerHub.
-// The pipeline includes stages for checking out the code, building and deploying the frontend and backend, and pushing the images to DockerHub.
