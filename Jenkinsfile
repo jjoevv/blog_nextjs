@@ -2,32 +2,46 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds') // Jenkins Credentials (username & password)
-        DOCKERHUB_USERNAME = "${DOCKERHUB_CREDENTIALS_USR}"
-        DOCKERHUB_PASSWORD = "${DOCKERHUB_CREDENTIALS_PSW}"
-        IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"
-        IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"
-        TAG = "${env.BUILD_NUMBER}"
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')      // Jenkins Credentials: username & password
+        DOCKERHUB_USERNAME = "${DOCKERHUB_CREDENTIALS_USR}"         // Username for Docker Hub
+        DOCKERHUB_PASSWORD = "${DOCKERHUB_CREDENTIALS_PSW}"         // Password for Docker Hub
+        TAG = "${env.BUILD_NUMBER}"                                 // Tag for images using Jenkins build number
+
+        USER_SERVER = 'dev'                                         // SSH user on lab server
+        SERVER_IP = credentials('LAB_SERVER_IP')                    // Lab server IP from Secret Text Credential
+
+        IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"           // Docker Hub FE image
+        IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"           // Docker Hub BE image
     }
 
     parameters {
-        booleanParam(name: 'ROLLBACK', defaultValue: false, description: 'Tick to rollback instead of deploy')
-        string(name: 'ROLLBACK_TAG', defaultValue: '', description: 'Image tag to rollback (required if ROLLBACK is true)')
+        booleanParam(name: 'ROLLBACK', defaultValue: false, description: 'Tick to rollback instead of deploy') // Parameter to decide if we are rolling back
+        string(name: 'ROLLBACK_TAG', defaultValue: '', description: 'Image tag to rollback (required if ROLLBACK is true)') // Tag to rollback to, required if ROLLBACK is true
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout') { // Checkout the code from SCM
             steps {
-                checkout scm
+                checkout scm // This will checkout the code from the configured SCM (e.g., Git)
             }
         }
 
+        // Stage to build and push Docker images
+        // Only run this stage if ROLLBACK is false
         stage('Build & Push Images') {
             when {
-                expression { return !params.ROLLBACK }
+                expression { !params.ROLLBACK }  // Check if ROLLBACK is false
             }
             steps {
-                script {
+                script { 
+                    // Ensure Docker is installed and running
+                    // Check if Docker is running
+                    sh 'docker info || { echo "Docker is not running. Exiting."; exit 1; }'
+
+                    // Login to Docker Hub
+                    // Build and push Docker images for frontend and backend 
+                    // using the credentials stored in Jenkins
+                    
                     sh """
                     echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
@@ -46,44 +60,59 @@ pipeline {
             }
         }
 
+        // Stage to deploy or rollback the application
+        // This stage will run regardless of the ROLLBACK parameter
+        // It will either deploy the latest images or rollback to a specified tag
+        // Uses SSH to connect to the lab server and manage Docker containers
+        // If ROLLBACK is true, it will pull the specified tag and redeploy
+        // If ROLLBACK is false, it will pull the latest images and redeploy
+        // Uses the credentials stored in Jenkins for SSH access
+        // The server IP is stored in a Secret Text Credential
+        // The deployment is done using docker-compose to manage the containers
         stage('Deploy or Rollback') {
             steps {
                 script {
-                    if (params.ROLLBACK) {
-                        if (!params.ROLLBACK_TAG) {
-                            error("ROLLBACK_TAG is required when ROLLBACK is true.")
+                    sshagent(credentials: ['lab-server-ssh']) { // Use SSH agent to manage the SSH credentials
+                        
+                        // Check if ROLLBACK is true
+                        if (params.ROLLBACK) {
+                            if (!params.ROLLBACK_TAG) {
+                                error("❌ ROLLBACK_TAG is required when ROLLBACK is true.")
+                            }
+                            // If ROLLBACK is true, pull the specified tag and redeploy
+                            sh """
+                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
+                                echo "🔄 Rolling back to tag ${params.ROLLBACK_TAG}..."
+
+                                docker pull ${IMAGE_FE}:${params.ROLLBACK_TAG}
+                                docker pull ${IMAGE_BE}:${params.ROLLBACK_TAG}
+
+                                docker tag ${IMAGE_FE}:${params.ROLLBACK_TAG} ${IMAGE_FE}:latest
+                                docker tag ${IMAGE_BE}:${params.ROLLBACK_TAG} ${IMAGE_BE}:latest
+
+                                cd /path/to/project &&
+                                docker-compose up -d
+
+                                echo "✅ Rollback complete."
+                            '
+                            """
+                        } else {
+                            // If ROLLBACK is false, pull the latest images and redeploy
+                            // This will ensure the latest images are used
+                            sh """
+                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
+                                echo "🚀 Deploying latest images..."
+
+                                docker pull ${IMAGE_FE}:latest
+                                docker pull ${IMAGE_BE}:latest
+
+                                cd /path/to/project &&
+                                docker-compose up -d
+
+                                echo "✅ Deployment complete."
+                            '
+                            """
                         }
-
-                        sh """
-                        ssh user@yourserver "
-                            echo '🔄 Rolling back to tag ${params.ROLLBACK_TAG}...'
-
-                            docker pull $IMAGE_FE:${params.ROLLBACK_TAG}
-                            docker pull $IMAGE_BE:${params.ROLLBACK_TAG}
-
-                            docker tag $IMAGE_FE:${params.ROLLBACK_TAG} $IMAGE_FE:latest
-                            docker tag $IMAGE_BE:${params.ROLLBACK_TAG} $IMAGE_BE:latest
-
-                            cd /path/to/project &&
-                            docker-compose up -d
-
-                            echo '✅ Rollback complete.'
-                        "
-                        """
-                    } else {
-                        sh """
-                        ssh user@yourserver "
-                            echo '🚀 Deploying latest images...'
-
-                            docker pull $IMAGE_FE:latest
-                            docker pull $IMAGE_BE:latest
-
-                            cd /path/to/project &&
-                            docker-compose up -d
-
-                            echo '✅ Deployment complete.'
-                        "
-                        """
                     }
                 }
             }
@@ -102,3 +131,4 @@ pipeline {
         }
     }
 }
+// Note: Replace 'yourdockerhubuser' with your actual Docker Hub username.
