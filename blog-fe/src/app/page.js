@@ -1,6 +1,8 @@
-import Image from "next/image";
+import BlogCard from './components/BlogCard'
+import posts from './data/posts'
 
 export default function Home() {
+<<<<<<< HEAD
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
@@ -14,7 +16,7 @@ export default function Home() {
         />
         <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
          <li className="tracking-[-.01em]">
-            Hello, this is my app demo.
+            Hello, this is my app demo for CICD with Jenkins.
           </li>
           <li className="mb-2 tracking-[-.01em]">
             Get started by editing{" "}
@@ -103,4 +105,16 @@ export default function Home() {
       </footer>
     </div>
   );
+=======
+   return (
+    <main className="p-8 bg-gray-50 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-red-500">Welcome to My Demo Blog</h1>
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {posts.map((post) => (
+          <BlogCard key={post.id} post={post} />
+        ))}
+      </div>
+    </main>
+   )
+>>>>>>> fe
 }

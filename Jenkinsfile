@@ -1,17 +1,23 @@
 pipeline {
-  agent {
-    docker {
-      image 'node:18'
-      args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
-    }
-  }
+    agent any
 
-  environment {
-    BACKEND_IMAGE = 'hngthaovy/demo-nextappbe'    // ← Thay tên image DockerHub của bạn
-    CONTAINER_NAME = 'backend-app'
-    PORT = '5000'                                  // ← Cổng backend nếu có
-    DOCKERHUB_CREDENTIALS = 'dockerhub-creds'      // ← ID của Jenkins credential chứa DockerHub user/pass
-  }
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')      // Jenkins Credentials: username & password
+        DOCKERHUB_USERNAME = "${DOCKERHUB_CREDENTIALS_USR}"         // Username for Docker Hub
+        DOCKERHUB_PASSWORD = "${DOCKERHUB_CREDENTIALS_PSW}"         // Password for Docker Hub
+        TAG = "${env.BUILD_NUMBER}"                                 // Tag for images using Jenkins build number
+
+        USER_SERVER = 'dev'                                         // SSH user on lab server
+        SERVER_IP = credentials('LAB_SERVER_IP')                    // Lab server IP from Secret Text Credential
+
+        IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"           // Docker Hub FE image
+        IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"           // Docker Hub BE image
+    }
+
+    parameters {
+        booleanParam(name: 'ROLLBACK', defaultValue: false, description: 'Tick to rollback instead of deploy') // Parameter to decide if we are rolling back
+        string(name: 'ROLLBACK_TAG', defaultValue: '', description: 'Image tag to rollback (required if ROLLBACK is true)') // Tag to rollback to, required if ROLLBACK is true
+    }
 
   stages {
     stage('Checkout') {
@@ -29,7 +35,7 @@ pipeline {
         }
       }
     }
-    /*
+
     stage('Build Docker Image') {
       steps {
         script {
@@ -52,7 +58,7 @@ pipeline {
         }
       }
     }
-    */
+
     // Optional: Run container locally
     // stage('Deploy') {
     //   steps {
@@ -66,10 +72,11 @@ pipeline {
 
   post {
     success {
-      echo "✅ Deployment completed!"
+      echo "✅ Backend pipeline completed!"
     }
     failure {
-      echo "❌ Deployment failed!"
+      echo "❌ Backend pipeline failed."
     }
   }
 }
+// Note: Replace 'yourdockerhubuser' with your actual Docker Hub username.
