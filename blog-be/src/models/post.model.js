@@ -7,9 +7,9 @@ const mongoose = require('mongoose'); // Import Mongoose for MongoDB object mode
 // Define the schema for a blog post
 // This schema includes fields for title, content, author, tags, creation date, and views   
 const postSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  content: { type: String, required: true },
-  author: { type: String, required: true },
+  title: { type: String },
+  content: { type: String },
+  author: { type: String },
   tags: [String],
   createdAt: { type: Date, default: Date.now },
   views: { type: Number, default: 0 }
