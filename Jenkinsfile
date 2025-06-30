@@ -1,3 +1,7 @@
+
+// This Jenkinsfile defines a CI/CD pipeline for a Next.js application with a frontend and backend.
+// It includes stages for checking out code, building and pushing Docker images, and deploying or rolling   
+
 pipeline {
     agent any
 
@@ -14,8 +18,9 @@ pipeline {
         IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"           // Docker Hub BE image
     }
 
+    // Parameters for the pipeline
     parameters {
-        booleanParam(name: 'ROLLBACK', defaultValue: false, description: 'Tick to rollback instead of deploy') // Parameter to decide if we are rolling back
+        booleanParam(name: 'ROLLBACK', defaultValue: false, description: 'Tick to rollback instead of deploy') // boolean to decide if we are rolling back instead of deploying
         string(name: 'ROLLBACK_TAG', defaultValue: '', description: 'Image tag to rollback (required if ROLLBACK is true)') // Tag to rollback to, required if ROLLBACK is true
     }
 
@@ -45,8 +50,8 @@ pipeline {
                     sh """
                     echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
-                    docker build -t $IMAGE_FE:latest -t $IMAGE_FE:$TAG ./frontend
-                    docker build -t $IMAGE_BE:latest -t $IMAGE_BE:$TAG ./backend
+                    docker build -t $IMAGE_FE:latest -t $IMAGE_FE:$TAG ./blog-fe
+                    docker build -t $IMAGE_BE:latest -t $IMAGE_BE:$TAG ./blog-be
 
                     docker push $IMAGE_FE:latest
                     docker push $IMAGE_FE:$TAG
@@ -131,4 +136,3 @@ pipeline {
         }
     }
 }
-// Note: Replace 'yourdockerhubuser' with your actual Docker Hub username.
