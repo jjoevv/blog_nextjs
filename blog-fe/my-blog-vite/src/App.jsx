@@ -5,7 +5,7 @@ function App() {
   const [posts, setPosts] = useState([]);
 
   useEffect(() => {
-    fetch("https://jsonplaceholder.typicode.com/posts?_limit=5")
+    fetch("https://jsonplaceholder.typicode.com/posts?_limit=10")
       .then((res) => res.json())
       .then((data) => setPosts(data));
   }, []);
