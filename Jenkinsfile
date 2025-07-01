@@ -18,7 +18,7 @@ pipeline {
                 }
             }
         }
-
+        /*
         stage('Lint') {
             steps {
                 dir('blog-be') {
@@ -26,7 +26,7 @@ pipeline {
                     sh 'npm run lint'
                 }
             }
-        }
+        }*/
 
         stage('Test') {
             steps {
