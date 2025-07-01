@@ -13,7 +13,8 @@ FROM node:20-alpine
 WORKDIR /app
 
 ENV NODE_ENV=production
-COPY --from=builder /app ./ 
+COPY --from=builder /app ./my-blog-vite
+COPY package*.json ./
 RUN npm install --production
 
 EXPOSE 3000
