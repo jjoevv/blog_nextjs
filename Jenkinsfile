@@ -12,7 +12,7 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                dir('blog-fe') {
+                dir('blog-fe/my-blog-vite') {
                     echo 'Installing dependencies for lint and test...'
                     sh 'npm install --legacy-peer-deps'
                 }
@@ -21,7 +21,7 @@ pipeline {
         /*
         stage('Lint') {
             steps {
-                dir('blog-fe') {
+                dir('blog-fe/my-blog-vite') {
                     echo '🔍 Running lint...'
                     sh 'npm run lint'
                 }
@@ -30,7 +30,7 @@ pipeline {
 
         stage('Test') {
             steps {
-                dir('blog-fe') {
+                dir('blog-fe/my-blog-vite') {
                     echo '🧪 Running unit tests...'
                     sh 'npm test'
                 }
