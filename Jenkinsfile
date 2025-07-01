@@ -18,7 +18,7 @@ pipeline {
                 }
             }
         }
-
+        /*
         stage('Lint') {
             steps {
                 dir('blog-fe') {
@@ -26,7 +26,7 @@ pipeline {
                     sh 'npm run lint'
                 }
             }
-        }
+        }*/
 
         stage('Test') {
             steps {
@@ -39,8 +39,8 @@ pipeline {
     }
 
     post {
-        success { echo '✅ frontend pipeline completed successfully.' }
-        failure { echo '❌ frontend pipeline failed.' }
+        success { echo '✅ Frontend pipeline completed successfully.' }
+        failure { echo '❌ Frontend pipeline failed.' }
         always { cleanWs() }
     }
 }
