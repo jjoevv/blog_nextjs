@@ -12,22 +12,28 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                echo '📦 Installing dependencies for lint and test...'
-                sh 'npm install --legacy-peer-deps'
+                dir('blog-be') {
+                    echo '📦 Installing dependencies for lint and test...'
+                    sh 'npm install --legacy-peer-deps'
+                }
             }
         }
 
         stage('Lint') {
             steps {
-                echo '🔍 Running lint...'
-                sh 'npm run lint'
+                dir('blog-be') {
+                    echo '🔍 Running lint...'
+                    sh 'npm run lint'
+                }
             }
         }
 
         stage('Test') {
             steps {
-                echo '🧪 Running unit tests...'
-                sh 'npm test'
+                dir('blog-be') {
+                    echo '🧪 Running unit tests...'
+                    sh 'npm test'
+                }
             }
         }
     }
