@@ -78,7 +78,7 @@ pipeline {
                     sh """
                     echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
-                    docker build -t $IMAGE_FE:latest -t $IMAGE_FE:$TAG ./blog-fe/my-blog-fe
+                    docker build -t $IMAGE_FE:latest -t $IMAGE_FE:$TAG ./blog-fe/my-blog-vite
                     docker build -t $IMAGE_BE:latest -t $IMAGE_BE:$TAG ./blog-be
 
                     docker push $IMAGE_FE:latest
