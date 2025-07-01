@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'NodeJS 24.3.0' // Ensure this matches the Node.js version installed in Jenkins
+    }
+
     stages {
         stage('Checkout') {
             steps { checkout scm }
