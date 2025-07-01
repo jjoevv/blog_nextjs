@@ -1,6 +1,6 @@
 
 // This Jenkinsfile defines a CI/CD pipeline for a Next.js application with a frontend and backend.
-// It includes stages for checking out code, building and pushing Docker images, and deploying or rolling   
+// It includes stages for checking out code, building and pushing Docker images, and deploying or rolling
 
 pipeline {
     agent any
@@ -17,15 +17,19 @@ pipeline {
         IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"           // Docker Hub FE image
         IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"           // Docker Hub BE image
 
-        SSH_CREDENTIALS = 'vps-ssh'                                 // SSH credentials for VPS deployment
+        SSH_CREDENTIALS = credentials('lab-server-ssh')                    // SSH credentials for VPS deployment
     }
-     tools {
+    tools {
         nodejs 'NodeJS 24.3.0'
     }
     // Parameters for the pipeline
     parameters {
-        booleanParam(name: 'ROLLBACK', defaultValue: false, description: 'Tick to rollback instead of deploy') // boolean to decide if we are rolling back instead of deploying
-        string(name: 'ROLLBACK_TAG', defaultValue: '', description: 'Image tag to rollback (required if ROLLBACK is true)') // Tag to rollback to, required if ROLLBACK is true
+        booleanParam(
+            name: 'ROLLBACK', defaultValue: false, description: 'Tick to rollback instead of deploy'
+            )
+        string(
+            name: 'ROLLBACK_TAG', defaultValue: '', description: 'Image tag to rollback (required if ROLLBACK is true)'
+            )
     }
 
     stages {
@@ -69,15 +73,15 @@ pipeline {
                 expression { !params.ROLLBACK }  // Check if ROLLBACK is false
             }
             steps {
-                script { 
+                script {
                     // Ensure Docker is installed and running
                     // Check if Docker is running
                     sh 'docker info || { echo "Docker is not running. Exiting."; exit 1; }'
 
                     // Login to Docker Hub
-                    // Build and push Docker images for frontend and backend 
+                    // Build and push Docker images for frontend and backend
                     // using the credentials stored in Jenkins
-                    
+
                     sh """
                     echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
@@ -108,12 +112,12 @@ pipeline {
         stage('Deploy or Rollback') {
             steps {
                 script {
-                    sshagent(credentials: ['lab-server-ssh']) { // Use SSH agent to manage the SSH credentials
-                        
+                    sshagent(SSH_CREDENTIALS) { // Use SSH agent to manage the SSH credentials
+
                         // Check if ROLLBACK is true
                         if (params.ROLLBACK) {
                             if (!params.ROLLBACK_TAG) {
-                                error("❌ ROLLBACK_TAG is required when ROLLBACK is true.")
+                                error('❌ ROLLBACK_TAG is required when ROLLBACK is true.')
                             }
                             // If ROLLBACK is true, pull the specified tag and redeploy
                             sh """
@@ -153,22 +157,23 @@ pipeline {
                 }
             }
         }
-    }
-    stage('Deploy frontend to VPS') {
-        steps {
-            sshagent([SSH_CREDENTIALS]) {
-                sh """
-                ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} '
+        /*
+        stage('Deploy frontend to VPS') {
+            steps {
+                sshagent([SSH_CREDENTIALS]) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} '
                     docker pull ${IMAGE_FE} &&
                     docker stop app || true &&
                     docker rm app || true &&
                     docker run -d --name app -p 80:3000 ${IMAGE_FE}
                 '
                 """
+                }
             }
         }
-    }
-    stage('Deploy to Backend Server') {
+
+        stage('Deploy to Backend Server') {
             steps {
                 sshagent([SSH_CREDENTIALS]) {
                     sh """
@@ -182,6 +187,9 @@ pipeline {
                 }
             }
         }
+        */
+    }
+
     post {
         success {
             echo '✅ Pipeline completed successfully.'
