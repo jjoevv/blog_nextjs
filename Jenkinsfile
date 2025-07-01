@@ -16,6 +16,8 @@ pipeline {
 
         IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"           // Docker Hub FE image
         IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"           // Docker Hub BE image
+
+        SSH_CREDENTIALS = 'vps-ssh'                                 // SSH credentials for VPS deployment
     }
      tools {
         nodejs 'NodeJS 24.3.0'
@@ -152,7 +154,34 @@ pipeline {
             }
         }
     }
-
+    stage('Deploy frontend to VPS') {
+        steps {
+            sshagent([SSH_CREDENTIALS]) {
+                sh """
+                ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} '
+                    docker pull ${IMAGE_FE} &&
+                    docker stop app || true &&
+                    docker rm app || true &&
+                    docker run -d --name app -p 80:3000 ${IMAGE_FE}
+                '
+                """
+            }
+        }
+    }
+    stage('Deploy to Backend Server') {
+            steps {
+                sshagent([SSH_CREDENTIALS]) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} '
+                        docker pull ${IMAGE_BE} &&
+                        docker stop backend-app || true &&
+                        docker rm backend-app || true &&
+                        docker run -d --name backend-app -p 4000:4000 ${IMAGE_BE}
+                    '
+                    """
+                }
+            }
+        }
     post {
         success {
             echo '✅ Pipeline completed successfully.'
