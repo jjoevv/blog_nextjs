@@ -36,7 +36,6 @@ pipeline {
                 checkout scm // This will checkout the code from the configured SCM (e.g., Git)
             }
         }
-        
         // Stage to install dependencies for linting and testing
         // This stage will run npm install in both frontend and backend directories
         stage('Install Dependencies') {
@@ -81,6 +80,7 @@ pipeline {
                     // using the credentials stored in Jenkins
 
                     sh """
+                    echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
                     docker build -t $IMAGE_FE:latest -t $IMAGE_FE:$TAG ./blog-fe/my-blog-vite
                     docker build -t $IMAGE_BE:latest -t $IMAGE_BE:$TAG ./blog-be
