@@ -109,7 +109,7 @@ pipeline {
         // The deployment is done using docker-compose to manage the containers
        stage('Deploy or Rollback') {
             steps {
-                sshagent(['lab-server-ssh']) { // ✅ Sửa đúng cú pháp
+                sshagent(['vps-ssh']) { 
                     script {
                         def deployCommand = """
                             ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
