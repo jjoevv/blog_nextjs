@@ -109,19 +109,28 @@ pipeline {
         // Uses the credentials stored in Jenkins for SSH access
         // The server IP is stored in a Secret Text Credential
         // The deployment is done using docker-compose to manage the containers
-        stage('Deploy or Rollback') {
+       stage('Deploy or Rollback') {
             steps {
-                script {
-                    sshagent([SSH_CREDENTIALS]) { // Use SSH agent to manage the SSH credentials
-
-                        // Check if ROLLBACK is true
-                        if (params.ROLLBACK) {
-                            if (!params.ROLLBACK_TAG) {
-                                error('❌ ROLLBACK_TAG is required when ROLLBACK is true.')
-                            }
-                            // If ROLLBACK is true, pull the specified tag and redeploy
-                            sh """
+                sshagent(['lab-server-ssh']) { // ✅ Sửa đúng cú pháp
+                    script {
+                        def deployCommand = """
                             ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
+                                set -e
+                                echo "🚀 Starting deployment..."
+
+                                cd /home/dev/nextapp
+
+                                docker-compose pull
+
+                                docker-compose up -d
+
+                                echo "✅ Deployment complete."
+                            '
+                        """
+
+                        def rollbackCommand = """
+                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
+                                set -e
                                 echo "🔄 Rolling back to tag ${params.ROLLBACK_TAG}..."
 
                                 docker pull ${IMAGE_FE}:${params.ROLLBACK_TAG}
@@ -130,33 +139,29 @@ pipeline {
                                 docker tag ${IMAGE_FE}:${params.ROLLBACK_TAG} ${IMAGE_FE}:latest
                                 docker tag ${IMAGE_BE}:${params.ROLLBACK_TAG} ${IMAGE_BE}:latest
 
-                                cd /path/to/project &&
+                                cd /home/dev/nextapp
+
                                 docker-compose up -d
 
                                 echo "✅ Rollback complete."
                             '
-                            """
+                        """
+
+                        if (params.ROLLBACK) {
+                            if (!params.ROLLBACK_TAG) {
+                                error('❌ ROLLBACK_TAG is required when ROLLBACK is true.')
+                            }
+                            echo "🔄 Executing rollback to tag ${params.ROLLBACK_TAG}..."
+                            sh rollbackCommand
                         } else {
-                            // If ROLLBACK is false, pull the latest images and redeploy
-                            // This will ensure the latest images are used
-                            sh """
-                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
-                                echo "🚀 Deploying latest images..."
-
-                                docker pull ${IMAGE_FE}:latest
-                                docker pull ${IMAGE_BE}:latest
-
-                                cd /path/to/project &&
-                                docker-compose up -d
-
-                                echo "✅ Deployment complete."
-                            '
-                            """
+                            echo "🚀 Executing deployment of latest images..."
+                            sh deployCommand
                         }
                     }
                 }
             }
         }
+
         /*
         stage('Deploy frontend to VPS') {
             steps {
