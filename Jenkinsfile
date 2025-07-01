@@ -17,7 +17,7 @@ pipeline {
         IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"           // Docker Hub FE image
         IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"           // Docker Hub BE image
 
-        SSH_CREDENTIALS = credentials('lab-server-ssh')                    // SSH credentials for VPS deployment
+        SSH_CREDENTIALS = credentials('lab-server-ssh')             // SSH credentials for VPS deployment
     }
     tools {
         nodejs 'NodeJS 24.3.0'
@@ -112,7 +112,7 @@ pipeline {
         stage('Deploy or Rollback') {
             steps {
                 script {
-                    sshagent(SSH_CREDENTIALS) { // Use SSH agent to manage the SSH credentials
+                    sshagent([SSH_CREDENTIALS]) { // Use SSH agent to manage the SSH credentials
 
                         // Check if ROLLBACK is true
                         if (params.ROLLBACK) {
