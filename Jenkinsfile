@@ -9,10 +9,11 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')      // Jenkins Credentials: username & password
         DOCKERHUB_USERNAME = "${DOCKERHUB_CREDENTIALS_USR}"         // Username for Docker Hub
         DOCKERHUB_PASSWORD = "${DOCKERHUB_CREDENTIALS_PSW}"         // Password for Docker Hub
-        TAG = "${env.BUILD_NUMBER}"                                 // Tag for images using Jenkins build number
+        TAG = "build-${env.BUILD_NUMBER}"                                 // Tag for images using Jenkins build number
 
         USER_SERVER = 'dev'                                         // SSH user on lab server
-        SERVER_IP = credentials('LAB_SERVER_IP')                    // Lab server IP from Secret Text Credential
+        //SERVER_IP = credentials('LAB_SERVER_IP')                    // Lab server IP from Secret Text Credential
+        SERVER_IP = '192.168.1.184'                            // Hardcoded for testing, replace with credentials('LAB_SERVER_IP') in production
 
         IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"           // Docker Hub FE image
         IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"           // Docker Hub BE image
@@ -71,6 +72,7 @@ pipeline {
         stage('Build & Push Images') {
             when {
                 expression { !params.ROLLBACK }  // Check if ROLLBACK is false
+                branch 'main' // Ensure this stage only runs on the main branch
             }
             steps {
                 script {
@@ -169,6 +171,9 @@ pipeline {
         }
         failure {
             echo '❌ Pipeline failed.'
+        }
+        always {
+            cleanWs()
         }
     }
 }
