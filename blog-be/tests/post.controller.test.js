@@ -1,5 +1,6 @@
 // File: /tests/post.controller.test.js
 // This file contains tests for the post controller functions using Jest and MongoDB Memory Server.
+jest.setTimeout(30000); // Set a longer timeout for tests to allow for database operations
 
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');             // Import MongoDB Memory Server for in-memory testing to avoid using a real database during tests
@@ -11,12 +12,12 @@ let mongoServer;    // Variable to hold the instance of MongoDB Memory Server
 // Setup and teardown for the in-memory MongoDB server
 // This ensures that the database is ready before tests run and cleaned up after tests complete
 beforeAll(async () => {
-        mongoServer = await MongoMemoryServer.create();     // Create a new instance of MongoDB Memory Server
-        mongoose.set('strictQuery', false);                 // Disable strict query mode for mongoose to allow for flexible querying and testing
-        const uri = mongoServer.getUri();      
-        // Connect mongoose to the in-memory MongoDB instance using the URI
-        await mongoose.connect(uri);
-        console.log('Connected to MongoMemoryServer');  // Log success message when connected
+    mongoServer = await MongoMemoryServer.create();     // Create a new instance of MongoDB Memory Server
+    mongoose.set('strictQuery', false);                 // Disable strict query mode for mongoose to allow for flexible querying and testing
+    const uri = mongoServer.getUri();      
+    // Connect mongoose to the in-memory MongoDB instance using the URI
+    await mongoose.connect(uri);
+    console.log('Connected to MongoMemoryServer');  // Log success message when connected
 });
 
 
@@ -24,7 +25,6 @@ beforeAll(async () => {
 // This disconnects mongoose and stops the MongoDB Memory Server to clean up resources
 // Ensure that no resources are left hanging after tests are done
 afterAll(async () => {
-    await Post
     await mongoose.disconnect();
      if (mongoServer) {
         await mongoServer.stop();
