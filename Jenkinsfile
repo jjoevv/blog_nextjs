@@ -155,6 +155,7 @@ pipeline {
                             sh rollbackCommand
                         } else {
                             echo "🚀 Executing deployment of latest images..."
+                            sh "ssh -o StrictHostKeyChecking=no dev@192.168.1.184 'echo OK: SSH working'"
                             sh deployCommand
                         }
                     }
