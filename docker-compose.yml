@@ -11,7 +11,7 @@ services:
     image: ${DOCKERHUB_USERNAME}/demo-nextappbe:latest
     restart: always
     environment:
-      - MONGO_URL=${MONGODB_URI}
+      - MONGO_URI=${MONGODB_URI}
     ports:
       - "4000:4000"
     depends_on:
