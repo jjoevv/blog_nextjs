@@ -29,6 +29,9 @@ pipeline {
         string(
             name: 'ROLLBACK_TAG', defaultValue: '', description: 'Image tag to rollback (required if ROLLBACK is true)'
             )
+        booleanParam(
+            name: 'SKIP_PUSH_IMAGE', defaultValue: false, description: 'Tick to skip pushing Docker images to Docker Hub'
+            )
     }
 
     stages {
@@ -67,26 +70,37 @@ pipeline {
 
         // Stage to build and push Docker images
         // Only run this stage if ROLLBACK is false
-        stage('Build & Push Images') {
+        // Stage to build Docker images
+        stage('Build Docker Images') {
             when {
-                expression { !params.ROLLBACK }  // Check if ROLLBACK is false
-                branch 'main' // Ensure this stage only runs on the main branch
+                expression { !params.ROLLBACK }
+                branch 'main'
             }
             steps {
                 script {
-                    // Ensure Docker is installed and running
-                    // Check if Docker is running
                     sh 'docker info || { echo "Docker is not running. Exiting."; exit 1; }'
 
-                    // Login to Docker Hub
-                    // Build and push Docker images for frontend and backend
-                    // using the credentials stored in Jenkins
+                    echo "🛠 Building Docker images for frontend and backend..."
+
+                    sh """
+                    docker build -t $IMAGE_FE:latest -t $IMAGE_FE:$TAG ./blog-fe/my-blog-vite
+                    docker build -t $IMAGE_BE:latest -t $IMAGE_BE:$TAG ./blog-be
+                    """
+                }
+            }
+        }
+
+        // Stage to push Docker images
+        stage('Push Docker Images') {
+            when {
+                expression { !params.ROLLBACK && !params.SKIP_PUSH_IMAGE }
+            }
+            steps {
+                script {
+                    echo "🚀 Pushing Docker images to Docker Hub..."
 
                     sh """
                     echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-
-                    docker build -t $IMAGE_FE:latest -t $IMAGE_FE:$TAG ./blog-fe/my-blog-vite
-                    docker build -t $IMAGE_BE:latest -t $IMAGE_BE:$TAG ./blog-be
 
                     docker push $IMAGE_FE:latest
                     docker push $IMAGE_FE:$TAG
@@ -99,6 +113,7 @@ pipeline {
                 }
             }
         }
+
 
         // Stage to deploy or rollback the application
         // This stage will run regardless of the ROLLBACK parameter
