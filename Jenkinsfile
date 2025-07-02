@@ -113,6 +113,18 @@ pipeline {
             steps {
                 sshagent(['vps-ssh']) { 
                     script {
+                        
+                        // Ensure the docker-compose.yml file is present in the workspace
+                        if (!fileExists('docker-compose.yml')) {
+                            error('❌ docker-compose.yml file not found in the workspace. Please ensure it exists.')
+                        } else  {
+                            sh """
+                                echo "🚚 Copying docker-compose.yml to server..."
+                                scp -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${SERVER_IP}:/home/dev/nextapp/docker-compose.yml
+                                echo "✅ docker-compose.yml copied successfully."
+                            """
+                        }
+                       
                         def deployCommand = """
                             ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
                                 set -e
