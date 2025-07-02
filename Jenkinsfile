@@ -118,7 +118,8 @@ pipeline {
                                 set -e
                                 echo "🚀 Starting deployment..."
 
-                                cd /home/dev/nextapp
+                                mkdir -p /home/dev/nextapp &&
+                                cd /home/dev/nextapp &&
 
                                 docker-compose pull
 
