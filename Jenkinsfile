@@ -113,6 +113,18 @@ pipeline {
             }
         }
 
+        // Stage to clean up dangling Docker images
+        stage('Cleanup After Build') {
+            steps {
+                script {
+                    echo "🧹 Cleaning up dangling Docker images again after build..."
+
+                    sh 'docker image prune -f'
+                    sh 'docker volume prune -f'
+                    sh 'docker container prune -f'
+                }
+            }
+        }
 
         // Stage to deploy or rollback the application
         // This stage will run regardless of the ROLLBACK parameter
