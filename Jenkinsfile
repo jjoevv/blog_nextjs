@@ -74,7 +74,6 @@ pipeline {
         stage('Build Docker Images') {
             when {
                 expression { !params.ROLLBACK }
-                branch 'main'
             }
             steps {
                 script {
