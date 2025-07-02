@@ -108,7 +108,7 @@ pipeline {
         // If ROLLBACK is false, it will pull the latest images and redeploy
         // Uses the credentials stored in Jenkins for SSH access
         // The server IP is stored in a Secret Text Credential
-        // The deployment is done using docker-compose to manage the containers
+        // The deployment is done using docker compose to manage the containers
        stage('Deploy or Rollback') {
             steps {
                 sshagent(['vps-ssh']) { 
@@ -121,7 +121,7 @@ pipeline {
                                 mkdir -p /home/dev/nextapp &&
                                 cd /home/dev/nextapp &&
 
-                                docker-compose pull
+                                docker compose pull
 
                                 docker compose up -d
 
