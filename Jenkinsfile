@@ -123,7 +123,7 @@ pipeline {
 
                                 docker-compose pull
 
-                                docker-compose up -d
+                                docker compose up -d
 
                                 echo "✅ Deployment complete."
                             '
@@ -140,9 +140,10 @@ pipeline {
                                 docker tag ${IMAGE_FE}:${params.ROLLBACK_TAG} ${IMAGE_FE}:latest
                                 docker tag ${IMAGE_BE}:${params.ROLLBACK_TAG} ${IMAGE_BE}:latest
 
-                                cd /home/dev/nextapp
+                                mkdir -p /home/dev/nextapp &&
+                                cd /home/dev/nextapp &&
 
-                                docker-compose up -d
+                                docker compose up -d
 
                                 echo "✅ Rollback complete."
                             '
