@@ -8,6 +8,7 @@ async function connectDB(uri) {
     try {
         mongoose.set('strictQuery', false);     //Allow flexible querying
         await mongoose.connect(uri);
+        console.log('✅ MongoDB connected successfully');
     } catch (error) {
         console.error('❌ MongoDB connection error:', error);
         process.exit(1);

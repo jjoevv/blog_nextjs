@@ -9,7 +9,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "vite preview --port 3000 --host"
+    "start": "next start"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",

@@ -8,7 +8,7 @@ dotenv.config(); // Load environment variables from .env file
 const express = require('express'); // Import Express framework for building web applications
 const connectDB = require('./config/db'); // Import the database connection function
 
-const app = express();
+const app = require('./app'); // Import the Express app configuration
 app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
