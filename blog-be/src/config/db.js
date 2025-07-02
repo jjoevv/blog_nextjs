@@ -1,7 +1,8 @@
 // 📄 src/db.js
 
 
-import mongoose from 'mongoose'; // Import mongoose for MongoDB connection
+//import mongoose from 'mongoose'; // Import mongoose for MongoDB connection
+const mongoose = require('mongoose'); // Import mongoose for MongoDB connection
 
 async function connectDB(uri) {
     try {
@@ -13,4 +14,4 @@ async function connectDB(uri) {
     }
 }
 
-export default connectDB;
+module.exports = connectDB; // Export the connectDB function for use in other files

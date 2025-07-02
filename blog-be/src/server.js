@@ -1,7 +1,12 @@
-import 'dotenv/config';
+//import 'dotenv/config';
 
-import express from 'express';
-import connectDB from './config/db.js'; 
+//import express from 'express';
+//import connectDB from './config/db.js'; 
+
+const dotenv = require('dotenv'); // Import dotenv to manage environment variables
+dotenv.config(); // Load environment variables from .env file   
+const express = require('express'); // Import Express framework for building web applications
+const connectDB = require('./config/db'); // Import the database connection function
 
 const app = express();
 app.use(express.json());

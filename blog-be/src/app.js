@@ -11,5 +11,5 @@ app.use(cors()); // Enable CORS for all routes
 app.use(express.json()); // Parse incoming JSON requests
 app.use('/api/posts', postRoutes); // Use post routes for handling /api/posts requests
 
-module.exports = app; // Export the app for use in server.js
+module.exports = app; // Export the Express app instance
 // This allows the server to import and use this app configuration
