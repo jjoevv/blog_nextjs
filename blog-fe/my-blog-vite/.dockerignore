@@ -1,12 +1,8 @@
 node_modules
 .git
-.gitignore
-Dockerfile
-README.md
-tests
-.env
-.env.local
-.env.development
-.env.production
 dist
-next
+.next
+*.log
+Dockerfile*
+README.md
+.vscode

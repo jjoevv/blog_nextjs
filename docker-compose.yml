@@ -13,7 +13,7 @@ services:
     env_file:
       - .env
     environment:
-      - MONGODB_URI=${MONGODB_URI}
+      - MONGO_URI=${MONGODB_URI}
     ports:
       - "4000:4000"
     depends_on:
