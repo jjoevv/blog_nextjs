@@ -10,6 +10,8 @@ services:
   backend:
     image: ${DOCKERHUB_USERNAME}/demo-nextappbe:latest
     restart: always
+    env_file:
+      - .env
     environment:
       - MONGO_URI=${MONGODB_URI}
     ports:
