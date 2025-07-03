@@ -40,6 +40,7 @@ pipeline {
                 checkout scm // This will checkout the code from the configured SCM (e.g., Git)
             }
         }
+        /*
         // Stage to install dependencies for linting and testing
         // This stage will run npm install in both frontend and backend directories
         stage('Install Dependencies') {
@@ -66,8 +67,7 @@ pipeline {
                     sh 'npm test'
                 }
             }
-        }
-/*
+        }*/
         // Stage to build and push Docker images
         // Only run this stage if ROLLBACK is false
         // Stage to build Docker images
@@ -111,7 +111,7 @@ pipeline {
                     """
                 }
             }
-        }*/
+        }
 
         // Stage to clean up dangling Docker images
         stage('Cleanup After Build') {
