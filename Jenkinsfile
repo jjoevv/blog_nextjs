@@ -32,6 +32,9 @@ pipeline {
         booleanParam(
             name: 'SKIP_PUSH_IMAGE', defaultValue: false, description: 'Tick to skip pushing Docker images to Docker Hub'
             )
+        booleanParam(
+            name: 'SKIP_BUILD_IMAGE', defaultValue: true, description: 'Tick to skip building Docker images'
+            )
     }
 
     stages {
