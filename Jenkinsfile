@@ -67,7 +67,7 @@ pipeline {
                 }
             }
         }
-
+/*
         // Stage to build and push Docker images
         // Only run this stage if ROLLBACK is false
         // Stage to build Docker images
@@ -111,7 +111,7 @@ pipeline {
                     """
                 }
             }
-        }
+        }*/
 
         // Stage to clean up dangling Docker images
         stage('Cleanup After Build') {
