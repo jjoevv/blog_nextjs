@@ -76,7 +76,7 @@ pipeline {
         // Stage to build Docker images
         stage('Build Docker Images') {
             when {
-                expression { !params.ROLLBACK }
+                expression { !params.ROLLBACK && !params.SKIP_BUILD_IMAGE }
             }
             steps {
                 script {
