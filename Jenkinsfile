@@ -246,10 +246,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline completed successfully.'
+            githubNotify context: 'DemoCICD', status: 'SUCCESS', description: 'Pipeline passed'
         }
         failure {
-            echo '❌ Pipeline failed.'
+            githubNotify context: 'DemoCICD', status: 'FAILURE', description: 'Pipeline failed'
         }
         always {
             cleanWs()
