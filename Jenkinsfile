@@ -95,7 +95,7 @@ pipeline {
         // Stage to push Docker images
         stage('Push Docker Images') {
             when {
-                expression { !params.ROLLBACK && !params.SKIP_PUSH_IMAGE }
+                expression { !params.ROLLBACK && !params.SKIP_PUSH_IMAGE && !params.SKIP_BUILD_IMAGE }
             }
             steps {
                 script {
