@@ -20,9 +20,6 @@ services:
       - mongodb
 
   frontend:
-    build:    
-      context: ./blog-fe/my-blog-vite
-      dockerfile: Dockerfile
     image: ${DOCKERHUB_USERNAME}/demo-nextappfe:latest
     restart: always
     ports:
