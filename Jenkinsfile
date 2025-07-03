@@ -14,7 +14,7 @@ pipeline {
         USER_SERVER = 'dev'                                         // SSH user on lab server
         //SERVER_IP = credentials('LAB_SERVER_IP')                    // Lab server IP from Secret Text Credential
         SERVER_IP = '192.168.0.155'                            // Hardcoded for testing, replace with credentials('LAB_SERVER_IP') in production
-
+        TARGET_PATH = '/home/dev/nextapp/docker-compose.yml'                          // Target path on the lab server
         IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"           // Docker Hub FE image
         IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"           // Docker Hub BE image
     }
@@ -151,7 +151,7 @@ pipeline {
                                 try {
                                     echo "🚚 Trying to copy via IP LAN: ${SERVER_IP}"
                                     sh """
-                                        scp -o ConnectTimeout=10 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}
+                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}
                                     """
                                     echo "✅ Copied via IP LAN successfully."
                                     copySuccess = true
