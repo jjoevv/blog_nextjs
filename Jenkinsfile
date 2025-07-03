@@ -201,7 +201,7 @@ pipeline {
                                 cd /home/dev/nextapp &&
 
                                 docker compose pull
-
+                                docker compose down
                                 docker compose up -d
 
                                 echo "✅ Deployment complete."
@@ -221,6 +221,8 @@ pipeline {
 
                                 mkdir -p /home/dev/nextapp &&
                                 cd /home/dev/nextapp &&
+
+                                docker compose down
 
                                 docker compose up -d
 
