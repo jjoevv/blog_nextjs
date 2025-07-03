@@ -13,7 +13,7 @@ pipeline {
 
         USER_SERVER = 'dev'                                         // SSH user on lab server
         //SERVER_IP = credentials('LAB_SERVER_IP')                    // Lab server IP from Secret Text Credential
-        SERVER_IP = '192.168.1.184'                            // Hardcoded for testing, replace with credentials('LAB_SERVER_IP') in production
+        SERVER_IP = '192.168.0.155'                            // Hardcoded for testing, replace with credentials('LAB_SERVER_IP') in production
 
         IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"           // Docker Hub FE image
         IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"           // Docker Hub BE image
