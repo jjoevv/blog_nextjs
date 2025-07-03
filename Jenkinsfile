@@ -144,11 +144,52 @@ pipeline {
                         if (!fileExists('docker-compose.yml')) {
                             error('❌ docker-compose.yml file not found in the workspace. Please ensure it exists.')
                         } else  {
-                            sh """
-                                echo "🚚 Copying docker-compose.yml to server..."
-                                scp -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${SERVER_IP}:/home/dev/nextapp/docker-compose.yml
-                                echo "✅ docker-compose.yml copied successfully."
-                            """
+                            script {
+                                def copySuccess = false
+
+                                // Try IP LAN
+                                try {
+                                    echo "🚚 Trying to copy via IP LAN: ${SERVER_IP}"
+                                    sh """
+                                        scp -o ConnectTimeout=10 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}
+                                    """
+                                    echo "✅ Copied via IP LAN successfully."
+                                    copySuccess = true
+                                } catch (err) {
+                                    echo "⚠️ Failed to copy via IP LAN (${SERVER_IP}), trying via localhost..."
+                                }
+
+                                // Try localhost
+                                if (!copySuccess) {
+                                    try {
+                                        sh """
+                                            scp -o ConnectTimeout=10 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@localhost:${TARGET_PATH}
+                                        """
+                                        echo "✅ Copied via localhost successfully."
+                                        copySuccess = true
+                                    } catch (err) {
+                                        echo "⚠️ Failed to copy via localhost, trying via 127.0.0.1..."
+                                    }
+                                }
+
+                                // Try 127.0.0.1
+                                if (!copySuccess) {
+                                    try {
+                                        sh """
+                                            scp -o ConnectTimeout=10 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@127.0.0.1:${TARGET_PATH}
+                                        """
+                                        echo "✅ Copied via 127.0.0.1 successfully."
+                                        copySuccess = true
+                                    } catch (err) {
+                                        echo "❌ Failed to copy via 127.0.0.1 as well."
+                                    }
+                                }
+
+                                // If all fail, fail the pipeline
+                                if (!copySuccess) {
+                                    error("❌ All connection methods failed. Please check SSH availability, firewall, or IP configuration on your server.")
+                                }
+                            }
                         }
                        
                         def deployCommand = """
@@ -194,8 +235,7 @@ pipeline {
                             echo "🔄 Executing rollback to tag ${params.ROLLBACK_TAG}..."
                             sh rollbackCommand
                         } else {
-                            echo "🚀 Executing deployment of latest images..."
-                            sh "ssh -o StrictHostKeyChecking=no dev@192.168.1.184 'echo OK: SSH working'"
+                            sh 'echo "🚀 Executing deployment with latest images... ${SERVER_IP}"'
                             sh deployCommand
                         }
                     }
