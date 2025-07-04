@@ -14,7 +14,7 @@ pipeline {
         USER_SERVER = 'dev'                                         // SSH user on lab server
         //SERVER_IP = credentials('LAB_SERVER_IP')                    // Lab server IP from Secret Text Credential
         SERVER_IP = '192.168.0.155'                            // Hardcoded for testing, replace with credentials('LAB_SERVER_IP') in production
-        TARGET_PATH = '/home/dev/nextapp/docker-compose.yml'                          // Target path on the lab server
+        TARGET_PATH = '/home/dev/nextapp/'                          // Target path on the lab server
         IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"           // Docker Hub FE image
         IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"           // Docker Hub BE image
     }
@@ -144,8 +144,8 @@ pipeline {
                     script {
                         
                         // Ensure the docker-compose.yml file is present in the workspace
-                        if (!fileExists('docker-compose.yml')) {
-                            error('❌ docker-compose.yml file not found in the workspace. Please ensure it exists.')
+                        if (!fileExists('docker-compose.yml') || !fileExists('prometheus.yml')) {
+                            error('❌ docker-compose.yml or prometheus file not found in the workspace. Please ensure it exists.')
                         } else  {
                             script {
                                 def copySuccess = false
@@ -154,8 +154,7 @@ pipeline {
                                 try {
                                     echo "Trying to copy via IP LAN"
                                     sh """
-                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no \
-                                        docker-compose.yml prometheus.yml \
+                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no docker-compose.yml prometheus.yml
                                         ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}
                                     """
 
@@ -168,7 +167,7 @@ pipeline {
 
                                 // If all fail, fail the pipeline
                                 if (!copySuccess) {
-                                    error("❌ All connection methods failed. Please check SSH availability, firewall, or IP configuration on your server.")
+                                    error("Connect failed. Please check the server IP and SSH credentials.")
                                 }
                             }
                         }
