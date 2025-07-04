@@ -154,6 +154,10 @@ pipeline {
                                 try {
                                     echo "Trying to copy via IP LAN"
                                     sh """
+                                    
+                                        mkdir -p /home/dev/nextapp &&
+                                        cd /home/dev/nextapp &&
+                                        
                                         scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no docker-compose.yml prometheus.yml
                                         ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}
                                     """
