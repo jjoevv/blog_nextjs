@@ -79,7 +79,8 @@ services:
     expose:
       - 9100
     networks:
-      - monitoring
+      monitoring:
+        driver: bridge
 volumes:
   mongo-data:
   grafana_data:
