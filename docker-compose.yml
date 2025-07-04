@@ -65,4 +65,5 @@ services:
 volumes:
   mongo-data:
   grafana_data:
+  prometheus-data:
 
