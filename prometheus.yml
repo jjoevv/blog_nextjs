@@ -14,7 +14,7 @@ scrape_configs:
       - targets: ['node-exporter:9100']
   - job_name: 'cadvisor'
     static_configs:
-      - targets: ['cadvisor:8080']
+      - targets: ['cadvisor:8081']
   - job_name: 'backend'
     static_configs:
       - targets: ['backend:4000']
