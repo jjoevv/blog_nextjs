@@ -1,0 +1,46 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongo:27017']
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+  - job_name: 'backend'
+    static_configs:
+      - targets: ['backend:4000']
+  - job_name: 'frontend'
+    static_configs:
+      - targets: ['frontend:3000']
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+
+
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SMTP_ENABLED=true
+      - GF_SMTP_HOST=smtp.gmail.com:587
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  mongo-data:
+  grafana_data:

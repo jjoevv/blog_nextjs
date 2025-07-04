@@ -154,39 +154,17 @@ pipeline {
                                 try {
                                     echo "🚚 Trying to copy via IP LAN: ${SERVER_IP}"
                                     sh """
-                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}
+                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no \
+                                        docker-compose.yml prometheus.yml \
+                                        ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}
                                     """
+
                                     echo "✅ Copied via IP LAN successfully."
                                     copySuccess = true
                                 } catch (err) {
                                     echo "⚠️ Failed to copy via IP LAN (${SERVER_IP}), trying via localhost..."
                                 }
 
-                                // Try localhost
-                                if (!copySuccess) {
-                                    try {
-                                        sh """
-                                            scp -o ConnectTimeout=10 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@localhost:${TARGET_PATH}
-                                        """
-                                        echo "✅ Copied via localhost successfully."
-                                        copySuccess = true
-                                    } catch (err) {
-                                        echo "⚠️ Failed to copy via localhost, trying via 127.0.0.1..."
-                                    }
-                                }
-
-                                // Try 127.0.0.1
-                                if (!copySuccess) {
-                                    try {
-                                        sh """
-                                            scp -o ConnectTimeout=10 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@127.0.0.1:${TARGET_PATH}
-                                        """
-                                        echo "✅ Copied via 127.0.0.1 successfully."
-                                        copySuccess = true
-                                    } catch (err) {
-                                        echo "❌ Failed to copy via 127.0.0.1 as well."
-                                    }
-                                }
 
                                 // If all fail, fail the pipeline
                                 if (!copySuccess) {
