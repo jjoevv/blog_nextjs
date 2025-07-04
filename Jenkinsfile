@@ -152,7 +152,7 @@ pipeline {
 
                                 // Try IP LAN
                                 try {
-                                    echo "🚚 Trying to copy via IP LAN: ${SERVER_IP}"
+                                    echo "Trying to copy via IP LAN"
                                     sh """
                                         scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no \
                                         docker-compose.yml prometheus.yml \
@@ -162,7 +162,7 @@ pipeline {
                                     echo "✅ Copied via IP LAN successfully."
                                     copySuccess = true
                                 } catch (err) {
-                                    echo "⚠️ Failed to copy via IP LAN (${SERVER_IP}), trying via localhost..."
+                                    echo "⚠️ Failed to copy via IP LAN (${SERVER_IP})... ${err.getMessage()}"
                                 }
 
 
