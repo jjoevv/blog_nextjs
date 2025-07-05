@@ -19,7 +19,4 @@ scrape_configs:
   - job_name: 'jenkins'  
     metrics_path: '/prometheus'
     static_configs:
-      - targets: ['192.168.0.155:8080']
-    labels:
-      jenkins_job: 'nextapp'
-      jenkins_build: 'latest'
+      - targets: ['192.168.1.233:8080']

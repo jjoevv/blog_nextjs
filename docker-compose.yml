@@ -35,8 +35,6 @@ services:
         - ./prometheus.yml:/etc/prometheus/prometheus.yml
         - prometheus-data:/prometheus
       restart: unless-stopped
-      command:
-        - "--config.file=/etc/prometheus/prometheus.yml"
 
   grafana:
     image: grafana/grafana:latest
@@ -78,7 +76,14 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     expose:
       - 9100
-
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_data:/var/jenkins_home
 networks:
   monitoring:
     driver: bridge 
@@ -87,4 +92,5 @@ volumes:
   mongo-data:
   grafana_data:
   prometheus-data:
+  jenkins_data:
 
