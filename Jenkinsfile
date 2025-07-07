@@ -159,15 +159,15 @@ pipeline {
                                     
                                         mkdir -p /home/dev/nextapp 
 
-                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${enSERVER_IP}:${TARGET_PATH}docker-compose.yml
-                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no prometheus.yml ${USER_SERVER}@${enSERVER_IP}:${TARGET_PATH}prometheus.yml
+                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}docker-compose.yml
+                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no prometheus.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}prometheus.yml
                                         
                                     """
 
                                     echo "✅ Copied via IP LAN successfully."
                                     copySuccess = true
                                 } catch (err) {
-                                    echo "⚠️ Failed to copy via IP LAN (${enSERVER_IP})... ${err.getMessage()}"
+                                    echo "⚠️ Failed to copy via IP LAN (${SERVER_IP})... ${err.getMessage()}"
                                 }
 
 
@@ -181,7 +181,7 @@ pipeline {
                         def jenkinsHost = envMap.JENKINS_HOST
 
                         def deployCommand = """
-                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${enSERVER_IP} '
+                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
                                 set -e
                                 echo "🚀 Starting deployment..."
 
@@ -201,7 +201,7 @@ pipeline {
 
 
                         def rollbackCommand = """
-                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${enSERVER_IP} '
+                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
                                 set -e
                                 echo "🔄 Rolling back to tag ${params.ROLLBACK_TAG}..."
 
