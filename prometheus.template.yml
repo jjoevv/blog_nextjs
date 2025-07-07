@@ -1,7 +1,7 @@
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
-  rules: 
+  rule_files: 
     - recording_rules.yml
 
 scrape_configs:
