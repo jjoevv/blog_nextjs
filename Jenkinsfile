@@ -144,7 +144,6 @@ pipeline {
             steps {
                 sshagent(['vps-ssh']) { 
                     script {
-                        def envMap = readProperties file: '.env'
                         // Ensure the docker-compose.yml file is present in the workspace
                         if (!fileExists('docker-compose.yml') || !fileExists('prometheus.yml')) {
                             error('❌ docker-compose.yml or prometheus file not found in the workspace. Please ensure it exists.')
@@ -178,7 +177,7 @@ pipeline {
                                 }
                             }
                         }
-                       
+                        def envMap = readProperties file: '.env'
                         def jenkinsHost = envMap.JENKINS_HOST
 
                         
@@ -193,7 +192,7 @@ pipeline {
                                 
                                 export JENKINS_HOST=${jenkinsHost}
                                 envsubst < prometheus.template.yml > prometheus.yml
-                                
+
                                 docker compose pull
                                 docker compose down
                                 docker compose up -d
