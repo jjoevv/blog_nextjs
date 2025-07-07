@@ -12,7 +12,7 @@ pipeline {
         TAG = "build-${env.BUILD_NUMBER}"                                 // Tag for images using Jenkins build number
 
         USER_SERVER = 'dev'                                         // SSH user on lab server
-        //SERVER_IP = credentials('LAB_SERVER_IP')                    // Lab server IP from Secret Text Credential
+        SERVER_IP = credentials('LAB_SERVER_IP')                    // Lab server IP from Secret Text Credential
         
         TARGET_PATH = '/home/dev/nextapp/'                          // Target path on the lab server
         IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"           // Docker Hub FE image
@@ -45,23 +45,6 @@ pipeline {
             }
         }
         
-        // Stage to prepare Prometheus configuration
-        // This stage will create a Prometheus configuration file from a template
-        stage('Prepare Prometheus Config') {
-            steps {
-                script {
-                    // Read environment variables from .env file
-                    // This file should contain JENKINS_HOST and JENKINS_PORT variables
-                    def envMap = readProperties file: '.env'
-
-                    sh """
-                        export JENKINS_HOST=${envMap.JENKINS_HOST}
-                        export JENKINS_PORT=${envMap.JENKINS_PORT}
-                        envsubst < prometheus.template.yml > prometheus.yml
-                    """
-                }
-            }
-        }
         /*
         // Stage to install dependencies for linting and testing
         // This stage will run npm install in both frontend and backend directories
@@ -148,7 +131,6 @@ pipeline {
             }
         }
 
-
         // Stage to deploy or rollback the application
         // This stage will run regardless of the ROLLBACK parameter
         // It will either deploy the latest images or rollback to a specified tag
@@ -169,23 +151,23 @@ pipeline {
                         } else  {
                             script {
                                 def copySuccess = false
-
+                                
                                 // Try IP LAN
                                 try {
-                                    echo "Trying to copy via IP LAN"
+                                    echo "Trying to copy via IP LAN "
                                     sh """
                                     
                                         mkdir -p /home/dev/nextapp 
 
-                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${envMap.JENKINS_HOST}:${TARGET_PATH}docker-compose.yml
-                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no prometheus.yml ${USER_SERVER}@${envMap.JENKINS_HOST}:${TARGET_PATH}prometheus.yml
+                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${enSERVER_IP}:${TARGET_PATH}docker-compose.yml
+                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no prometheus.yml ${USER_SERVER}@${enSERVER_IP}:${TARGET_PATH}prometheus.yml
                                         
                                     """
 
                                     echo "✅ Copied via IP LAN successfully."
                                     copySuccess = true
                                 } catch (err) {
-                                    echo "⚠️ Failed to copy via IP LAN (${envMap.JENKINS_HOST})... ${err.getMessage()}"
+                                    echo "⚠️ Failed to copy via IP LAN (${enSERVER_IP})... ${err.getMessage()}"
                                 }
 
 
@@ -196,13 +178,18 @@ pipeline {
                             }
                         }
                        
+                        def jenkinsHost = envMap.JENKINS_HOST
+
                         def deployCommand = """
-                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${envMap.JENKINS_HOST} '
+                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${enSERVER_IP} '
                                 set -e
                                 echo "🚀 Starting deployment..."
 
                                 mkdir -p /home/dev/nextapp &&
                                 cd /home/dev/nextapp &&
+
+                                export JENKINS_HOST=${jenkinsHost}
+                                envsubst < prometheus.template.yml > prometheus.yml
 
                                 docker compose pull
                                 docker compose down
@@ -212,8 +199,9 @@ pipeline {
                             '
                         """
 
+
                         def rollbackCommand = """
-                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${envMap.JENKINS_HOST} '
+                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${enSERVER_IP} '
                                 set -e
                                 echo "🔄 Rolling back to tag ${params.ROLLBACK_TAG}..."
 
