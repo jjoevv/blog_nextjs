@@ -194,7 +194,6 @@ pipeline {
                                 export JENKINS_HOST=${jenkinsHost}
                                 envsubst < prometheus.template.yml > prometheus.yml
 
-                                docker compose pull
                                 docker compose down
                                 docker compose up -d
 
