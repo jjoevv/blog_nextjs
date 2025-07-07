@@ -80,16 +80,17 @@ services:
 
   
   jenkins-exporter:
-    image: quay.io/czerwonk/jenkins_exporter:latest
     container_name: jenkins-exporter
+    image: promhippie/jenkins-exporter:latest
     environment:
-      - JENKINS_URI=http://jenkins:8080
-      - METRICS_ENDPOINT=/metrics
-      - BIND=0.0.0.0:9200
+      - JENKINS_EXPORTER_URL=https://jenkins.example.com
+      - JENKINS_EXPORTER_USERNAME=octocat
+      - JENKINS_EXPORTER_PASSWORD=p455w0rd
+      - JENKINS_EXPORTER_LOG_PRETTY=true
     ports:
       - "9200:9200"
     restart: unless-stopped
-    
+
 networks:
   monitoring:
     driver: bridge 
