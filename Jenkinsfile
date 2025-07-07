@@ -44,6 +44,24 @@ pipeline {
                 checkout scm // This will checkout the code from the configured SCM (e.g., Git)
             }
         }
+        
+        // Stage to prepare Prometheus configuration
+        // This stage will create a Prometheus configuration file from a template
+        stage('Prepare Prometheus Config') {
+            steps {
+                script {
+                    // Read environment variables from .env file
+                    // This file should contain JENKINS_HOST and JENKINS_PORT variables
+                    def envMap = readProperties file: '.env'
+
+                    sh """
+                        export JENKINS_HOST=${envMap.JENKINS_HOST}
+                        export JENKINS_PORT=${envMap.JENKINS_PORT}
+                        envsubst < prometheus.template.yml > prometheus.yml
+                    """
+                }
+            }
+        }
         /*
         // Stage to install dependencies for linting and testing
         // This stage will run npm install in both frontend and backend directories
@@ -130,23 +148,6 @@ pipeline {
             }
         }
 
-        // Stage to prepare Prometheus configuration
-        // This stage will create a Prometheus configuration file from a template
-        stage('Prepare Prometheus Config') {
-            steps {
-                script {
-                    // Read environment variables from .env file
-                    // This file should contain JENKINS_HOST and JENKINS_PORT variables
-                    def envMap = readProperties file: '.env'
-
-                    sh """
-                        export JENKINS_HOST=${envMap.JENKINS_HOST}
-                        export JENKINS_PORT=${envMap.JENKINS_PORT}
-                        envsubst < prometheus.template.yml > prometheus.yml
-                    """
-                }
-            }
-        }
 
         // Stage to deploy or rollback the application
         // This stage will run regardless of the ROLLBACK parameter
