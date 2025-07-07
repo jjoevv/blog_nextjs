@@ -161,7 +161,8 @@ pipeline {
 
                                         scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}docker-compose.yml
                                         scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no prometheus.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}prometheus.yml
-                                        
+                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no prometheus.template.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}prometheus.template.yml
+
                                     """
 
                                     echo "✅ Copied via IP LAN successfully."
@@ -180,6 +181,8 @@ pipeline {
                        
                         def jenkinsHost = envMap.JENKINS_HOST
 
+                                export JENKINS_HOST=${jenkinsHost}
+                                envsubst < prometheus.template.yml > prometheus.yml
                         def deployCommand = """
                             ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
                                 set -e
@@ -187,9 +190,6 @@ pipeline {
 
                                 mkdir -p /home/dev/nextapp &&
                                 cd /home/dev/nextapp &&
-
-                                export JENKINS_HOST=${jenkinsHost}
-                                envsubst < prometheus.template.yml > prometheus.yml
 
                                 docker compose pull
                                 docker compose down
