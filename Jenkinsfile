@@ -13,14 +13,15 @@ pipeline {
 
         USER_SERVER = 'dev'                                         // SSH user on lab server
         //SERVER_IP = credentials('LAB_SERVER_IP')                    // Lab server IP from Secret Text Credential
-        SERVER_IP = '192.168.1.184'                            // Hardcoded for testing, replace with credentials('LAB_SERVER_IP') in production
-
+        SERVER_IP = '192.168.1.233'                            // Hardcoded for testing, replace with credentials('LAB_SERVER_IP') in production
+        TARGET_PATH = '/home/dev/nextapp/'                          // Target path on the lab server
         IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"           // Docker Hub FE image
         IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"           // Docker Hub BE image
     }
+    /*
     tools {
         nodejs 'NodeJS 24.3.0'
-    }
+    }*/
     // Parameters for the pipeline
     parameters {
         booleanParam(
@@ -32,6 +33,9 @@ pipeline {
         booleanParam(
             name: 'SKIP_PUSH_IMAGE', defaultValue: false, description: 'Tick to skip pushing Docker images to Docker Hub'
             )
+        booleanParam(
+            name: 'SKIP_BUILD_IMAGE', defaultValue: true, description: 'Tick to skip building Docker images'
+            )
     }
 
     stages {
@@ -40,6 +44,7 @@ pipeline {
                 checkout scm // This will checkout the code from the configured SCM (e.g., Git)
             }
         }
+        /*
         // Stage to install dependencies for linting and testing
         // This stage will run npm install in both frontend and backend directories
         stage('Install Dependencies') {
@@ -66,14 +71,13 @@ pipeline {
                     sh 'npm test'
                 }
             }
-        }
-
+        }*/
         // Stage to build and push Docker images
         // Only run this stage if ROLLBACK is false
         // Stage to build Docker images
         stage('Build Docker Images') {
             when {
-                expression { !params.ROLLBACK }
+                expression { !params.ROLLBACK && !params.SKIP_BUILD_IMAGE }
             }
             steps {
                 script {
@@ -92,7 +96,7 @@ pipeline {
         // Stage to push Docker images
         stage('Push Docker Images') {
             when {
-                expression { !params.ROLLBACK && !params.SKIP_PUSH_IMAGE }
+                expression { !params.ROLLBACK && !params.SKIP_PUSH_IMAGE && !params.SKIP_BUILD_IMAGE }
             }
             steps {
                 script {
@@ -118,8 +122,8 @@ pipeline {
             steps {
                 script {
                     echo "🧹 Cleaning up dangling Docker images again after build..."
-
-                    sh 'docker image prune -f'
+                    sh 'docker system prune -af'
+                    sh 'docker image prune -f'  
                     sh 'docker volume prune -f'
                     sh 'docker container prune -f'
                 }
@@ -141,14 +145,36 @@ pipeline {
                     script {
                         
                         // Ensure the docker-compose.yml file is present in the workspace
-                        if (!fileExists('docker-compose.yml')) {
-                            error('❌ docker-compose.yml file not found in the workspace. Please ensure it exists.')
+                        if (!fileExists('docker-compose.yml') || !fileExists('prometheus.yml')) {
+                            error('❌ docker-compose.yml or prometheus file not found in the workspace. Please ensure it exists.')
                         } else  {
-                            sh """
-                                echo "🚚 Copying docker-compose.yml to server..."
-                                scp -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${SERVER_IP}:/home/dev/nextapp/docker-compose.yml
-                                echo "✅ docker-compose.yml copied successfully."
-                            """
+                            script {
+                                def copySuccess = false
+
+                                // Try IP LAN
+                                try {
+                                    echo "Trying to copy via IP LAN"
+                                    sh """
+                                    
+                                        mkdir -p /home/dev/nextapp 
+
+                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}docker-compose.yml
+                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no prometheus.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}prometheus.yml
+                                        
+                                    """
+
+                                    echo "✅ Copied via IP LAN successfully."
+                                    copySuccess = true
+                                } catch (err) {
+                                    echo "⚠️ Failed to copy via IP LAN (${SERVER_IP})... ${err.getMessage()}"
+                                }
+
+
+                                // If all fail, fail the pipeline
+                                if (!copySuccess) {
+                                    error("Connect failed. Please check the server IP and SSH credentials.")
+                                }
+                            }
                         }
                        
                         def deployCommand = """
@@ -160,7 +186,7 @@ pipeline {
                                 cd /home/dev/nextapp &&
 
                                 docker compose pull
-
+                                docker compose down
                                 docker compose up -d
 
                                 echo "✅ Deployment complete."
@@ -181,6 +207,8 @@ pipeline {
                                 mkdir -p /home/dev/nextapp &&
                                 cd /home/dev/nextapp &&
 
+                                docker compose down
+
                                 docker compose up -d
 
                                 echo "✅ Rollback complete."
@@ -194,8 +222,7 @@ pipeline {
                             echo "🔄 Executing rollback to tag ${params.ROLLBACK_TAG}..."
                             sh rollbackCommand
                         } else {
-                            echo "🚀 Executing deployment of latest images..."
-                            sh "ssh -o StrictHostKeyChecking=no dev@192.168.1.184 'echo OK: SSH working'"
+                            sh 'echo "🚀 Executing deployment with latest images... ${SERVER_IP}"'
                             sh deployCommand
                         }
                     }
@@ -206,10 +233,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline completed successfully.'
+            githubNotify context: 'DemoCICD', status: 'SUCCESS', description: 'Pipeline passed'
         }
         failure {
-            echo '❌ Pipeline failed.'
+            githubNotify context: 'DemoCICD', status: 'FAILURE', description: 'Pipeline failed'
         }
         always {
             cleanWs()
