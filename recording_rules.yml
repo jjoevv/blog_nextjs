@@ -1,0 +1,18 @@
+groups:
+  - name: jenkins_fill_missing_metrics
+    interval: 1m
+    rules:
+  - record: jenkins_job_building_duration_sum_5m
+    expr: coalesce(jenkins_job_building_duration_sum[5m], scalar(0))
+  - record: jenkins_job_queuing_duration_count
+    expr: coalesce(jenkins_job_queuing_duration_count, scalar(0))
+  - record: vm_uptime_milliseconds
+    expr: coalesce(vm_uptime_milliseconds, scalar(0))
+  - record: jenkins_node_offline_value
+    expr: coalesce(jenkins_node_offline_value, scalar(0))
+  - record: jenkins_node_builds_count
+    expr: coalesce(jenkins_node_builds_count, scalar(0))
+  - record: jenkins_runs_aborted_total
+    expr: coalesce(jenkins_runs_aborted_total, scalar(0))
+  - record: jenkins_queue_size_value
+    expr: coalesce(jenkins_queue_size_value, scalar(0))
