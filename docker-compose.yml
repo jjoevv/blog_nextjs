@@ -34,6 +34,7 @@ services:
       volumes:
         - ./prometheus.yml:/etc/prometheus/prometheus.yml
         - prometheus-data:/prometheus
+        - ./recording_rules.yml:/etc/prometheus/recording_rules.yml
       restart: unless-stopped
 
   grafana:

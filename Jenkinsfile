@@ -161,6 +161,7 @@ pipeline {
                                         scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}docker-compose.yml
                                         scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no prometheus.template.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}prometheus.template.yml
                                         scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no prometheus.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}prometheus.yml
+                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no recording_rules.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}recording_rules.yml
 
                                     """
 
