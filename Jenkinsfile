@@ -181,8 +181,8 @@ pipeline {
                        
                         def jenkinsHost = envMap.JENKINS_HOST
 
-                                export JENKINS_HOST=${jenkinsHost}
-                                envsubst < prometheus.template.yml > prometheus.yml
+                        
+
                         def deployCommand = """
                             ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
                                 set -e
@@ -190,7 +190,10 @@ pipeline {
 
                                 mkdir -p /home/dev/nextapp &&
                                 cd /home/dev/nextapp &&
-
+                                
+                                export JENKINS_HOST=${jenkinsHost}
+                                envsubst < prometheus.template.yml > prometheus.yml
+                                
                                 docker compose pull
                                 docker compose down
                                 docker compose up -d
