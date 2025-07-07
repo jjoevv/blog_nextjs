@@ -77,6 +77,25 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     expose:
       - 9100
+  jenkins:
+    image: jenkins/jenkins:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - jenkins_data:/var/jenkins_home
+  
+  jenkins-exporter:
+    build:
+      context: ./jenkins-exporter
+    container_name: jenkins-exporter
+    environment:
+      - JENKINS_URL=http://jenkins:8080
+      - JENKINS_USER=admin
+      - JENKINS_TOKEN=270602hntv
+      - SCRAPE_INTERVAL=30000
+    ports:
+      - "9200:9200"
+    restart: unless-stopped
 networks:
   monitoring:
     driver: bridge 
