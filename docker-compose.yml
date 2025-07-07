@@ -1,12 +1,4 @@
 services:
-  mongodb:
-    image: mongo:7
-    restart: always
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
   backend:
     image: ${DOCKERHUB_USERNAME}/demo-nextappbe:latest
     restart: always
@@ -85,17 +77,16 @@ services:
       - jenkins_data:/var/jenkins_home
   
   jenkins-exporter:
-    build:
-      context: ./jenkins-exporter
+    image: quay.io/czerwonk/jenkins_exporter:latest
     container_name: jenkins-exporter
     environment:
-      - JENKINS_URL=http://jenkins:8080
-      - JENKINS_USER=admin
-      - JENKINS_TOKEN=270602hntv
-      - SCRAPE_INTERVAL=30000
+      - JENKINS_URI=http://jenkins:8080
+      - METRICS_ENDPOINT=/metrics
+      - BIND=0.0.0.0:9200
     ports:
       - "9200:9200"
     restart: unless-stopped
+    
 networks:
   monitoring:
     driver: bridge 
