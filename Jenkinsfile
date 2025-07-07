@@ -13,7 +13,7 @@ pipeline {
 
         USER_SERVER = 'dev'                                         // SSH user on lab server
         //SERVER_IP = credentials('LAB_SERVER_IP')                    // Lab server IP from Secret Text Credential
-        SERVER_IP = '192.168.1.233'                            // Hardcoded for testing, replace with credentials('LAB_SERVER_IP') in production
+        
         TARGET_PATH = '/home/dev/nextapp/'                          // Target path on the lab server
         IMAGE_FE = "${DOCKERHUB_USERNAME}/demo-nextappfe"           // Docker Hub FE image
         IMAGE_BE = "${DOCKERHUB_USERNAME}/demo-nextappbe"           // Docker Hub BE image
@@ -130,6 +130,24 @@ pipeline {
             }
         }
 
+        // Stage to prepare Prometheus configuration
+        // This stage will create a Prometheus configuration file from a template
+        stage('Prepare Prometheus Config') {
+            steps {
+                script {
+                    // Read environment variables from .env file
+                    // This file should contain JENKINS_HOST and JENKINS_PORT variables
+                    def envMap = readProperties file: '.env'
+
+                    sh """
+                        export JENKINS_HOST=${envMap.JENKINS_HOST}
+                        export JENKINS_PORT=${envMap.JENKINS_PORT}
+                        envsubst < prometheus.template.yml > prometheus.yml
+                    """
+                }
+            }
+        }
+
         // Stage to deploy or rollback the application
         // This stage will run regardless of the ROLLBACK parameter
         // It will either deploy the latest images or rollback to a specified tag
@@ -143,7 +161,7 @@ pipeline {
             steps {
                 sshagent(['vps-ssh']) { 
                     script {
-                        
+                        def envMap = readProperties file: '.env'
                         // Ensure the docker-compose.yml file is present in the workspace
                         if (!fileExists('docker-compose.yml') || !fileExists('prometheus.yml')) {
                             error('❌ docker-compose.yml or prometheus file not found in the workspace. Please ensure it exists.')
@@ -158,15 +176,15 @@ pipeline {
                                     
                                         mkdir -p /home/dev/nextapp 
 
-                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}docker-compose.yml
-                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no prometheus.yml ${USER_SERVER}@${SERVER_IP}:${TARGET_PATH}prometheus.yml
+                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no docker-compose.yml ${USER_SERVER}@${envMap.JENKINS_HOST}:${TARGET_PATH}docker-compose.yml
+                                        scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no prometheus.yml ${USER_SERVER}@${envMap.JENKINS_HOST}:${TARGET_PATH}prometheus.yml
                                         
                                     """
 
                                     echo "✅ Copied via IP LAN successfully."
                                     copySuccess = true
                                 } catch (err) {
-                                    echo "⚠️ Failed to copy via IP LAN (${SERVER_IP})... ${err.getMessage()}"
+                                    echo "⚠️ Failed to copy via IP LAN (${envMap.JENKINS_HOST})... ${err.getMessage()}"
                                 }
 
 
@@ -178,7 +196,7 @@ pipeline {
                         }
                        
                         def deployCommand = """
-                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
+                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${envMap.JENKINS_HOST} '
                                 set -e
                                 echo "🚀 Starting deployment..."
 
@@ -194,7 +212,7 @@ pipeline {
                         """
 
                         def rollbackCommand = """
-                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${SERVER_IP} '
+                            ssh -o StrictHostKeyChecking=no ${USER_SERVER}@${envMap.JENKINS_HOST} '
                                 set -e
                                 echo "🔄 Rolling back to tag ${params.ROLLBACK_TAG}..."
 
@@ -222,7 +240,7 @@ pipeline {
                             echo "🔄 Executing rollback to tag ${params.ROLLBACK_TAG}..."
                             sh rollbackCommand
                         } else {
-                            sh 'echo "🚀 Executing deployment with latest images... ${SERVER_IP}"'
+                            sh 'echo "🚀 Executing deployment with latest images... "'
                             sh deployCommand
                         }
                     }

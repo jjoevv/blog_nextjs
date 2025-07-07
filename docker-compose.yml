@@ -19,13 +19,13 @@ services:
     depends_on:
       - mongodb
 
-  frontend:
-    image: ${DOCKERHUB_USERNAME}/demo-nextappfe:latest
-    restart: always
-    ports:
-      - "80:3000"
-    depends_on:
-      - backend
+  #frontend:
+   # image: ${DOCKERHUB_USERNAME}/demo-nextappfe:latest
+    #restart: always
+    #ports:
+     # - "80:3000"
+    #depends_on:
+     # - backend
   prometheus:
       image: prom/prometheus:latest
       container_name: prometheus
