@@ -79,17 +79,6 @@ services:
       - 9100
 
   
-  jenkins-exporter:
-    container_name: jenkins-exporter
-    image: promhippie/jenkins-exporter:latest
-    environment:
-      - JENKINS_EXPORTER_URL=https://jenkins.example.com
-      - JENKINS_EXPORTER_USERNAME=octocat
-      - JENKINS_EXPORTER_PASSWORD=p455w0rd
-      - JENKINS_EXPORTER_LOG_PRETTY=true
-    ports:
-      - "9200:9200"
-    restart: unless-stopped
 
 networks:
   monitoring:
